@@ -7,12 +7,15 @@
 package javaterminal;
 
 import java.awt.RenderingHints;
+import java.awt.event.KeyEvent;
 
 /**
  *
  * @author hdm
  */
 public class frmTerminal extends javax.swing.JFrame {
+JavaTerminal.ExecThread ExecTrd = new JavaTerminal.ExecThread();
+JavaTerminal.InputThread InputTrd = new JavaTerminal.InputThread();
 
     /**
      * Creates new form frmTerminal
@@ -123,22 +126,44 @@ public class frmTerminal extends javax.swing.JFrame {
     }//GEN-LAST:event_formWindowGainedFocus
 
     private void textMainKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_textMainKeyPressed
+        //実行中はとにかく入力
+        if ((evt.getModifiers() & KeyEvent.CTRL_MASK) != 0) {
+            if ((evt.getKeyCode() <= evt.VK_A) && (evt.getKeyCode() <= evt.VK_Z)) {
+                String cmd = "^" + String.valueOf(evt.getKeyChar());
+                System.out.println(cmd);
+                InputTrd.setInput(cmd);
+            }
+        }
+//        if (trd.running) {
+//            trd.setInput(String.valueOf(evt.getKeyChar()));
+//        }
+        
         if (evt.getKeyCode() == evt.VK_ESCAPE) {
             String cmd = getLine();
             JavaTerminal.talk(cmd);
             return;
         }
         if (evt.getKeyCode() == evt.VK_ENTER) {
-            JavaTerminal.terminate = false;
             String cmd = getLine();
-//            JavaTerminal.exec(cmd);
-            JavaTerminal.ExecThread trd = new JavaTerminal.ExecThread();
-            trd.setCmd(cmd);
-            trd.start();
+            //textMain.append("\n");
+            System.out.println("Running:" + ExecTrd.running);
+            if (!ExecTrd.running) {
+                System.out.println("Exec:" + cmd);
+                ExecTrd = new JavaTerminal.ExecThread();
+                InputTrd = new JavaTerminal.InputThread();
+                ExecTrd.setCmd(cmd);
+                ExecTrd.start();          //別スレッドで動作させる場合
+                InputTrd.start();
+            } else {
+                System.out.println("Input:" + cmd);
+                InputTrd.setInput(cmd);
+            }
             return;
         }
         if (evt.getKeyCode() == evt.VK_END) {
-            JavaTerminal.terminate = true;
+            append("強制終了\n");
+            ExecTrd.running = false;
+            ExecTrd.stop();            
         }
     }//GEN-LAST:event_textMainKeyPressed
 
@@ -158,6 +183,7 @@ public class frmTerminal extends javax.swing.JFrame {
 //            JavaTerminal.terminate = true;
 //        }
 //        if ((evt.getKeyCode() <= evt.VK_A) && (evt.getKeyCode() <= evt.VK_Z)) {
+        
             JavaTerminal.talk(String.valueOf((char)evt.getKeyCode()));
 //        }
     }//GEN-LAST:event_textMainKeyReleased

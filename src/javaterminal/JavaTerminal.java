@@ -13,6 +13,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
@@ -21,6 +22,7 @@ import java.util.Comparator;
 import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.swing.SwingUtilities;
 
 /**
  *
@@ -31,7 +33,7 @@ public static frmTerminal frmT = new frmTerminal();
 public static String talkExecIn ;
 public static String talkExec ;
 public static String talkSh ;
-public static boolean terminate = false;
+//public static boolean terminate = false;
 public static ArrayList<String[]> Dict = new ArrayList<String[]>();
 
     /**
@@ -164,14 +166,25 @@ public static ArrayList<String[]> Dict = new ArrayList<String[]>();
         }
     }
     static class ExecThread extends Thread{
+        boolean running = false;
+        OutputStream osT;
+        InputStream isT;
         private String cmdT;
+//        private String strInput = "";
         public void setCmd(String cmd) {
             cmdT = cmd;
         }
         public void run() {
             exec(cmdT);
+            cmdT = "";
         }
         public void exec(String str) {
+            if (cmdT.equals("")) {
+                running = false;
+                return;
+            }
+            //SwingUtilities.invokeLater(this);
+            running = true;
             str = str.trim();
             if (str.trim().equals("")) {
                 return;
@@ -185,36 +198,55 @@ public static ArrayList<String[]> Dict = new ArrayList<String[]>();
                 Process process = pb.start();
 
                 //StringBuilder sb = new StringBuilder();
-                InputStream is = process.getInputStream();
-                BufferedReader br = new BufferedReader(new InputStreamReader(is));
+                isT = process.getInputStream();
+                osT = process.getOutputStream();
+                BufferedReader br = new BufferedReader(new InputStreamReader(isT));
                 try {
                     String line = null;
                     while ((line = br.readLine()) != null) {
                         //sb.append(line);
-                        System.out.println(line);
+                        System.out.println("出力:" + line);
                         frmT.append(line);
                         frmT.append("\n");
                         frmT.repaint();
                         talk(line);
-                        if (JavaTerminal.terminate) {
-                            talk("処理を中断しました。");
-                            break;
-                        }
                     }
                 } finally {
                     br.close();
-                    is.close();
+                    isT.close();
+                    osT.close();
+                    running = false;
+                    frmT.append("終了しました。\n");
                 }
-    //            frmT.append("\n");
-    //            frmT.append(sb.toString());
-    //            talk(sb.toString());
-            //  process.waitFor();
             //  System.out.println("戻り値：" + process.exitValue());
             } catch (IOException ex) {
                 talk("エラーです。");
                 frmT.append(ex.toString());
                 frmT.append("\n");
                 talk(ex.toString());
+                running = false;
+            }
+        }
+    }
+    static class InputThread extends Thread{
+        private String cmdT;
+        public void run() {
+            setInput(cmdT);
+            cmdT = "";
+        }
+        public void setInput(String input) {
+            try {
+                if (frmT.ExecTrd.osT == null) {
+                    return;
+                }
+                if (input == null) {
+                    return;
+                }
+                frmT.ExecTrd.osT.write(input.getBytes());
+                frmT.ExecTrd.osT.write("\n".getBytes());
+                frmT.ExecTrd.osT.flush();
+            } catch (IOException ex) {
+                Logger.getLogger(JavaTerminal.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
     }
