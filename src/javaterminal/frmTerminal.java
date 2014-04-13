@@ -203,7 +203,7 @@ String filename = "";
                 if (cmdA[0].equals("edit")) {
                     //ファイル編集モード
                     mode = "edit";
-                    JavaTerminal.talk("編集モードに移行します。保存はコントロールエス、中止はコントロールシーです。");
+                    JavaTerminal.talk("編集モードに移行します。保存はコントロールエス、中止はコントロールエックスです。");
                     filename = "tmp.txt";
                     try {
                         filename = cmdA[1];

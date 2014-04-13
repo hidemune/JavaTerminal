@@ -9,7 +9,6 @@ package javaterminal;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -23,7 +22,6 @@ import java.util.Comparator;
 import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.swing.SwingUtilities;
 
 /**
  *
@@ -34,6 +32,7 @@ public static frmTerminal frmT = new frmTerminal();
 public static String talkExecIn ;
 public static String talkExec ;
 public static String talkSh ;
+public static String user ;
 //public static boolean terminate = false;
 public static ArrayList<String[]> Dict = new ArrayList<String[]>();
 
@@ -53,6 +52,7 @@ public static ArrayList<String[]> Dict = new ArrayList<String[]>();
         talkExecIn = config.getProperty("talkExec", "/usr/local/bin/open_jtalk");
         talkExec = config.getProperty("talkExec", "/usr/local/bin/open_jtalk");
         talkSh = config.getProperty("talkSh", "./talk.sh");
+        user = config.getProperty("user", "xxxx");
         
         //辞書ファイルの読み込み
         readDict();
@@ -70,6 +70,7 @@ public static ArrayList<String[]> Dict = new ArrayList<String[]>();
         
         config.setProperty("talkExec", talkExecIn);
         config.setProperty("talkSh", talkSh);
+        config.setProperty("user", user);
         
         try {
             config.store(new OutputStreamWriter(new FileOutputStream("javaterminal.properties"),"UTF-8"), "by HDM");
@@ -306,7 +307,7 @@ public static ArrayList<String[]> Dict = new ArrayList<String[]>();
             running = true;
             try {
                 System.out.println("tty接続を試みます。");
-                ProcessBuilder pb = new ProcessBuilder("bash", "-ce", "gksudo /bin/su hdm < /dev/tty");
+                ProcessBuilder pb = new ProcessBuilder("bash", "-ce", "gksudo /bin/su " + user + " < /dev/tty");
                 pb.redirectErrorStream(true);
 
                 Process process = pb.start();
