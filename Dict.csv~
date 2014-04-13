@@ -1,64 +1,68 @@
-to,トゥー
-desktop,デスクトップ
-gedit,ジーエディット
-WARNING,ワーニング
-Could,クッド
-not,ノット
-load,ロード
-repository,リポジトリ
-Typelib,タイプリブ
-file,ファイル
-for,フォー
-namespace,ネームスペース
-Source,ソース
-version,バージョン
-found,ファウンド
-Pango,パンゴ
-failed,フェイルド
-choose,チューズ
-font,フォント
-expect,エキスペクト
-ugly,アグリー
-output,アウトプット
-engine,エンジン
-type,タイプ
-Render,レンダー
-script,スクリプト
-common,コモン
-input,インプット
-is,イズ
-terminal,ターミナル
-from,フローム
-Calling,コーリング
-inhibit,インヒビット
-Bus,バス
-service,サービス
-opening,オープニング
-unknown,アンノウン
-error,エラー
-name,ネーム
-free,フリー
-any,エニー
-java,ジャバ
-cannot,キャノット
-gnome,グノーム
-session,セッション
-manager,マネージャ
-Exception,エクセプション
-Run,ラン
-Program,プログラム
-Files,ファイルズ
-Provided,プロバイデッド
-Was,ワズ
-By,バイ
-README,リードミー
-LICENSE,ライセンス
-properties,プロパティーズ
-manifest,マニフェスト
-\.,ドット
-~,にょろ
-行,ぎょう
-移行,いこう
-実行,じっこう
-行頭,ぎょうとう
-表示,ひょうじ
+to トゥー
+desktop デスクトップ
+gedit ジーエディット
+WARNING ワーニング
+Could クッド
+not ノット
+load ロード
+repository リポジトリ
+Typelib タイプリブ
+file ファイル
+for フォー
+namespace ネームスペース
+Source ソース
+version バージョン
+found ファウンド
+Pango パンゴ
+failed フェイルド
+choose チューズ
+font フォント
+expect エキスペクト
+ugly アグリー
+output アウトプット
+engine エンジン
+type タイプ
+Render レンダー
+script スクリプト
+common コモン
+input インプット
+is イズ
+terminal ターミナル
+from フローム
+Calling コーリング
+inhibit インヒビット
+Bus バス
+service サービス
+opening オープニング
+unknown アンノウン
+error エラー
+name ネーム
+free フリー
+any エニー
+java ジャバ
+cannot キャノット
+gnome グノーム
+session セッション
+manager マネージャ
+Exception エクセプション
+Run ラン
+Program プログラム
+Files ファイルズ
+Provided プロバイデッド
+Was ワズ
+By バイ
+README リードミー
+LICENSE ライセンス
+properties プロパティーズ
+manifest マニフェスト
+\. ドット
+~ にょろ
+行 ぎょう
+移行 いこう
+実行 じっこう
+行頭 ぎょうとう
+_ アンダースコア
+.*Pango-WARNING.* ''
+home ホーム
+NetBeans ネットビーンズ
+Projects プロジェクツ

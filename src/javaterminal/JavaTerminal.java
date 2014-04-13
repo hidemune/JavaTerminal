@@ -89,11 +89,11 @@ public static ArrayList<String[]> Dict = new ArrayList<String[]>();
             // 最終行まで読み込む
             String line = "";
             while ((line = br.readLine()) != null) {
-                    String[] str = line.toLowerCase().split(",", 2);
+                    String[] str = line.toLowerCase().split(" ", 2);
                     //文字数チェック
                     int len = str[0].length();
                     DecimalFormat df4 = new DecimalFormat("0000");
-                    wk.add(df4.format(len)+ "," + line.toLowerCase());
+                    wk.add(df4.format(len)+ " " + line.toLowerCase());
                 }
             br.close();
             //文字数の多い順に並べ替え
@@ -111,7 +111,7 @@ public static ArrayList<String[]> Dict = new ArrayList<String[]>();
             });
             //データ部
             for (int i = 0; i < oa.length; i++) {
-                String[] str = ((String)oa[i]).split(",", 3);
+                String[] str = ((String)oa[i]).split(" ", 3);
                 String[] setStr = new String[2];
                 setStr[0] = str[1].toLowerCase();
                 setStr[1] = str[2];
