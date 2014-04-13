@@ -121,6 +121,7 @@ public static ArrayList<String[]> Dict = new ArrayList<String[]>();
         }
     }
     public static void talk(String str) {
+        System.out.println(str);
         if (talkExec.equals("")) {
             return;
         }
@@ -205,7 +206,7 @@ public static ArrayList<String[]> Dict = new ArrayList<String[]>();
                     String line = null;
                     while ((line = br.readLine()) != null) {
                         //sb.append(line);
-                        System.out.println("出力:" + line);
+                        //System.out.println("出力:" + line);
                         frmT.append(line);
                         frmT.append("\n");
                         frmT.repaint();
