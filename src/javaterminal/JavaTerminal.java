@@ -9,6 +9,7 @@ package javaterminal;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -121,7 +122,7 @@ public static ArrayList<String[]> Dict = new ArrayList<String[]>();
         }
     }
     public static void talk(String str) {
-        System.out.println(str);
+        //System.out.println(str);
         if (talkExec.equals("")) {
             return;
         }
@@ -166,6 +167,8 @@ public static ArrayList<String[]> Dict = new ArrayList<String[]>();
             Logger.getLogger(JavaTerminal.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
+    
+    /*
     static class ExecThread extends Thread{
         boolean running = false;
         OutputStream osT;
@@ -229,6 +232,120 @@ public static ArrayList<String[]> Dict = new ArrayList<String[]>();
             }
         }
     }
+    */
+    static class ttyThread extends Thread{
+        boolean running = false;
+        OutputStream osT;
+        InputStream isT;
+        InputStream esT;
+        private String cmdT = "";
+        public void run() {
+            if (cmdT.equals("")) {
+                openTTY();
+            } else {
+                exec(cmdT);
+            }
+            cmdT = "";
+        }
+        public void setCmd(String cmd) {
+            cmdT = cmd;
+        }
+        public void exec(String str) {
+            if (cmdT.equals("")) {
+                running = false;
+                return;
+            }
+            //SwingUtilities.invokeLater(this);
+            running = true;
+            str = str.trim();
+            if (str.trim().equals("")) {
+                return;
+            }
+            String[] cmdarg = str.split(" ");
+
+            try {
+                ProcessBuilder pb = new ProcessBuilder(cmdarg);
+                pb.redirectErrorStream(true);
+
+                Process process = pb.start();
+
+                //StringBuilder sb = new StringBuilder();
+                isT = process.getInputStream();
+                osT = process.getOutputStream();
+                BufferedReader br = new BufferedReader(new InputStreamReader(isT));
+                try {
+                    String line = null;
+                    while ((line = br.readLine()) != null) {
+                        //sb.append(line);
+                        //System.out.println("出力:" + line);
+                        frmT.append(line);
+                        frmT.append("\n");
+                        frmT.repaint();
+                        talk(line);
+                    }
+                } finally {
+                    br.close();
+                    isT.close();
+                    osT.close();
+                    running = false;
+                    frmT.append("終了しました。\n");
+                }
+            //  System.out.println("戻り値：" + process.exitValue());
+            } catch (IOException ex) {
+                talk("エラーです。");
+                frmT.append(ex.toString());
+                frmT.append("\n");
+                talk(ex.toString());
+                running = false;
+            }
+        }
+        public void openTTY() {
+            if (running) {
+                return;
+            }
+            running = true;
+            try {
+                System.out.println("tty接続を試みます。");
+                ProcessBuilder pb = new ProcessBuilder("bash", "-ce", "gksudo /bin/su hdm < /dev/tty");
+                pb.redirectErrorStream(true);
+
+                Process process = pb.start();
+                process.waitFor();
+                
+                //StringBuilder sb = new StringBuilder();
+                esT = process.getErrorStream();
+                isT = process.getInputStream();
+                osT = process.getOutputStream();
+                
+                BufferedReader br = new BufferedReader(new InputStreamReader(isT));
+                try {
+                    String line = null;
+                    while ((line = br.readLine()) != null) {
+                        //sb.append(line);
+                        //System.out.println("出力:" + line);
+                        frmT.append(line);
+                        frmT.append("\n");
+                        frmT.repaint();
+                        talk(line);
+                    }
+                } finally {
+                    br.close();
+                    isT.close();
+                    osT.close();
+                    esT.close();
+                    running = false;
+                    frmT.append("終了しました。\n");
+                }
+              System.out.println("ttyThread戻り値：" + process.exitValue());
+            } catch (Exception ex) {
+                talk("エラーです。");
+                frmT.append(ex.toString());
+                frmT.append("\n");
+                talk(ex.toString());
+                running = false;
+            }
+        }
+    }
     static class InputThread extends Thread{
         private String cmdT;
         public void run() {
@@ -237,17 +354,52 @@ public static ArrayList<String[]> Dict = new ArrayList<String[]>();
         }
         public void setInput(String input) {
             try {
-                if (frmT.ExecTrd.osT == null) {
+                if (frmT.ttyTrd.osT == null) {
                     return;
                 }
                 if (input == null) {
                     return;
                 }
-                frmT.ExecTrd.osT.write(input.getBytes());
-                frmT.ExecTrd.osT.write("\n".getBytes());
-                frmT.ExecTrd.osT.flush();
+                frmT.ttyTrd.osT.write(input.getBytes());
+                frmT.ttyTrd.osT.write("\n".getBytes());
+                frmT.ttyTrd.osT.flush();
             } catch (IOException ex) {
                 Logger.getLogger(JavaTerminal.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+    }
+    static class ErrorThread extends Thread{
+        private String cmdT;
+        public void run() {
+            setOutput();
+        }
+        public void setOutput() {
+            try {
+                if (frmT.ttyTrd.esT == null) {
+                    return;
+                }
+                //frmT.ttyTrd.esT = process.getErrorStream();
+                BufferedReader br = new BufferedReader(new InputStreamReader(frmT.ttyTrd.esT));
+                try {
+                    String line = null;
+                    while ((line = br.readLine()) != null) {
+                        //sb.append(line);
+                        //System.out.println("出力:" + line);
+                        frmT.append(line);
+                        frmT.append("\n");
+                        frmT.repaint();
+                        talk(line);
+                    }
+                } finally {
+                    br.close();
+                    frmT.ttyTrd.esT.close();
+                }
+                System.out.println("ErrorThreadは終了しました。");
+            } catch (IOException ex) {
+                talk("エラーです。");
+                frmT.append(ex.toString());
+                frmT.append("\n");
+                talk(ex.toString());
             }
         }
     }

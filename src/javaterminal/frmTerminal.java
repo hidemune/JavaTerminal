@@ -6,8 +6,6 @@
 
 package javaterminal;
 
-import java.awt.Event;
-import java.awt.RenderingHints;
 import java.awt.event.KeyEvent;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -17,20 +15,16 @@ import java.io.FileOutputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
-import java.text.DecimalFormat;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import static javaterminal.JavaTerminal.Dict;
 
 /**
  *
  * @author hdm
  */
 public class frmTerminal extends javax.swing.JFrame {
-JavaTerminal.ExecThread ExecTrd = new JavaTerminal.ExecThread();
-JavaTerminal.InputThread InputTrd = new JavaTerminal.InputThread();
+//JavaTerminal.ExecThread ExecTrd = new JavaTerminal.ExecThread();
+JavaTerminal.ttyThread ttyTrd ;
+JavaTerminal.InputThread InputTrd ;
+JavaTerminal.ErrorThread ErrorTrd ;
 String mode = "";
 String filename = "";
 
@@ -39,6 +33,15 @@ String filename = "";
      */
     public frmTerminal() {
         initComponents();
+        
+        ttyTrd = new JavaTerminal.ttyThread();
+        InputTrd = new JavaTerminal.InputThread();
+        ErrorTrd = new JavaTerminal.ErrorThread();
+        
+        //ttyTrd.setCmd(cmd);
+        ttyTrd.start();          //別スレッドで動作させる場合
+        InputTrd.start();
+        ErrorTrd.start();
     }
 
     public void append(String str) {
@@ -181,6 +184,7 @@ String filename = "";
             JavaTerminal.talk(cmd);
             return;
         }
+        
         if (evt.getKeyCode() == evt.VK_ENTER) {
             //編集中は何もしない
             if (mode.equals("edit")) {
@@ -189,8 +193,10 @@ String filename = "";
             String cmd = getLine();
             textMain.append("\n");
             
+            
             //コマンドの実行処理
-            if (!ExecTrd.running) {
+            if (!ttyTrd.running) {
+                
                 //特殊なコマンド
                 String[] cmdA = cmd.split(" ");
                 //edit
@@ -208,18 +214,43 @@ String filename = "";
                     return;
                 }
                 
+                if (cmdA[0].equals("clear")) {
+                    //画面クリア
+                    textMain.setText("");
+                    evt.consume();  //キー入力をなかったことにする
+                    return;
+                }
+                
                 //System.out.println("Exec:" + cmd);
-                ExecTrd = new JavaTerminal.ExecThread();
+                ttyTrd = new JavaTerminal.ttyThread();
                 InputTrd = new JavaTerminal.InputThread();
-                ExecTrd.setCmd(cmd);
-                ExecTrd.start();          //別スレッドで動作させる場合
+                ttyTrd.setCmd(cmd);
+                ttyTrd.start();          //別スレッドで動作させる場合
                 InputTrd.start();
                 evt.consume();  //キー入力をなかったことにする
+            
             } else {
                 //System.out.println("Input:" + cmd);
                 InputTrd.setInput(cmd);
                 evt.consume();  //キー入力をなかったことにする
             }
+            
+            return;
+        }
+
+        if (evt.getKeyCode() == evt.VK_ENTER) {
+            //編集中は何もしない
+            if (mode.equals("edit")) {
+                return;
+            }
+            String cmd = getLine();
+            textMain.append("\n");
+            
+            
+            //コマンドの実行処理
+            //System.out.println("Input:" + cmd);
+            InputTrd.setInput(cmd);
+            //evt.consume();  //キー入力をなかったことにする
             return;
         }
         if (((evt.getModifiers() & KeyEvent.CTRL_MASK) != 0) && (evt.getKeyCode() == evt.VK_X)) {
@@ -229,12 +260,12 @@ String filename = "";
                 append("強制終了\n");
                 JavaTerminal.talk("強制終了");
                 mode = "";
-            }else if (ExecTrd.running) {
+            }else if (ttyTrd.running) {
                 append("強制終了\n");
                 JavaTerminal.talk("強制終了");
                 mode = "";
-                ExecTrd.running = false;
-                ExecTrd.stop();     
+                ttyTrd.running = false;
+                ttyTrd.stop();     
             }
         }
         if (((evt.getModifiers() & KeyEvent.CTRL_MASK) != 0) && (evt.getKeyCode() == evt.VK_S)) {
