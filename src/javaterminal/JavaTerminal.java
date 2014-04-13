@@ -240,6 +240,9 @@ public static ArrayList<String[]> Dict = new ArrayList<String[]>();
         InputStream isT;
         InputStream esT;
         private String cmdT = "";
+        private ProcessBuilder pb = null;
+        private Process process = null;
+        
         public void run() {
             if (cmdT.equals("")) {
                 openTTY();
@@ -256,20 +259,39 @@ public static ArrayList<String[]> Dict = new ArrayList<String[]>();
                 running = false;
                 return;
             }
-            //SwingUtilities.invokeLater(this);
-            running = true;
             str = str.trim();
             if (str.trim().equals("")) {
                 return;
             }
-            String[] cmdarg = str.split(" ");
+            //コマンド文字列の分割
+            String[] cmdarg = split(str);
 
+            running = true;
             try {
-                ProcessBuilder pb = new ProcessBuilder(cmdarg);
-                pb.redirectErrorStream(true);
-
-                Process process = pb.start();
-
+                //pb.redirectErrorStream(false);
+                if (cmdarg[0].equals("cd")) {
+                    frmT.append("Javaでは、カレントディレクトリを移動できません。udコマンドをご利用下さい。\n");
+                    frmT.append("タブキーでユーザーディレクトリを呼び出せます。\n");
+                    running = false;
+                    return;
+                } else if (cmdarg[0].equals("ud")) {
+                    File dir = new File("/home/" + user);
+                    if (cmdarg.length > 1) {
+                        dir = new File(cmdarg[1]);
+                    }
+                    
+                    pb = new ProcessBuilder("/bin/bash", "-c", "cd " + dir.getAbsolutePath());
+                    pb.directory(dir.getCanonicalFile());
+                    frmT.append(dir.getCanonicalFile().getAbsolutePath());
+                    frmT.append("\n");
+                    System.setProperty("user.dir", dir.getCanonicalFile().getAbsolutePath());
+                    process = pb.start();
+                    //process.waitFor();
+                }else {
+                    pb = new ProcessBuilder(cmdarg);
+                    process = pb.start();
+                    //process.waitFor();
+                }
                 //StringBuilder sb = new StringBuilder();
                 isT = process.getInputStream();
                 osT = process.getOutputStream();
@@ -292,7 +314,7 @@ public static ArrayList<String[]> Dict = new ArrayList<String[]>();
                     frmT.append("終了しました。\n");
                 }
             //  System.out.println("戻り値：" + process.exitValue());
-            } catch (IOException ex) {
+            } catch (Exception ex) {
                 talk("エラーです。");
                 frmT.append(ex.toString());
                 frmT.append("\n");
@@ -307,10 +329,10 @@ public static ArrayList<String[]> Dict = new ArrayList<String[]>();
             running = true;
             try {
                 System.out.println("tty接続を試みます。");
-                ProcessBuilder pb = new ProcessBuilder("bash", "-ce", "gksudo /bin/su " + user + " < /dev/tty");
-                pb.redirectErrorStream(true);
+                pb = new ProcessBuilder("bash", "-c", "gksudo /bin/su " + user + " < /dev/tty");
+                pb.redirectErrorStream(false);
 
-                Process process = pb.start();
+                process = pb.start();
                 process.waitFor();
                 
                 //StringBuilder sb = new StringBuilder();
@@ -369,6 +391,7 @@ public static ArrayList<String[]> Dict = new ArrayList<String[]>();
             }
         }
     }
+    
     static class ErrorThread extends Thread{
         private String cmdT;
         public void run() {
@@ -403,5 +426,38 @@ public static ArrayList<String[]> Dict = new ArrayList<String[]>();
                 talk(ex.toString());
             }
         }
+    }
+    public static String[] split(String str) {
+        
+        ArrayList al = new ArrayList();
+        StringBuilder sb = new StringBuilder();
+        boolean flgQ = false;
+        boolean flgDQ = false;
+        
+        for (int i = 0; i < str.length(); i++) {
+            String wk = str.substring(i, i + 1);
+            if (wk.equals("'")) {
+                flgQ = !flgQ;
+            }
+            if (wk.equals("\"")) {
+                flgDQ = !flgDQ;
+            }
+            if (wk.equals(" ")) {
+                if ((flgQ) || (flgDQ)) {
+                    //文字列は続く
+                    sb.append(wk);
+                } else {
+                    //分割
+                    al.add(sb.toString());
+                    sb = new StringBuilder();
+                }
+            } else {
+                sb.append(wk);
+            }
+        }
+        al.add(sb.toString());
+        
+        String[] ret = (String[]) al.toArray(new String[0]);
+        return ret;
     }
 }

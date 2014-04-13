@@ -71,6 +71,7 @@ String filename = "";
         jMenuItem6 = new javax.swing.JMenuItem();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
+        setTitle("JavaTerminal");
         addWindowFocusListener(new java.awt.event.WindowFocusListener() {
             public void windowGainedFocus(java.awt.event.WindowEvent evt) {
                 formWindowGainedFocus(evt);
@@ -85,7 +86,9 @@ String filename = "";
         });
 
         textMain.setColumns(20);
+        textMain.setLineWrap(true);
         textMain.setRows(5);
+        textMain.setTabSize(0);
         textMain.setFocusCycleRoot(true);
         textMain.addKeyListener(new java.awt.event.KeyAdapter() {
             public void keyPressed(java.awt.event.KeyEvent evt) {
@@ -178,6 +181,12 @@ String filename = "";
     }//GEN-LAST:event_formWindowGainedFocus
 
     private void textMainKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_textMainKeyPressed
+
+        
+        if (evt.getKeyCode() == evt.VK_TAB) {
+            textMain.insert(System.getProperty("user.dir") + "/", textMain.getCaretPosition());
+            return;
+        }
         
         if (evt.getKeyCode() == evt.VK_ESCAPE) {
             String cmd = getLine();
