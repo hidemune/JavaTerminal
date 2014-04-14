@@ -15,6 +15,7 @@ import java.io.FileOutputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
+import javax.swing.SwingUtilities;
 
 /**
  *
@@ -33,15 +34,15 @@ String filename = "";
      */
     public frmTerminal() {
         initComponents();
-        
         ttyTrd = new JavaTerminal.ttyThread();
         InputTrd = new JavaTerminal.InputThread();
         ErrorTrd = new JavaTerminal.ErrorThread();
+        //SwingUtilities.();
         
         //ttyTrd.setCmd(cmd);
         ttyTrd.start();          //別スレッドで動作させる場合
-        InputTrd.start();
-        ErrorTrd.start();
+        //InputTrd.start();
+        //ErrorTrd.start();
     }
 
     public void append(String str) {
@@ -86,6 +87,7 @@ String filename = "";
         });
 
         textMain.setColumns(20);
+        textMain.setFont(new java.awt.Font("VL ゴシック", 0, 12)); // NOI18N
         textMain.setLineWrap(true);
         textMain.setRows(5);
         textMain.setTabSize(0);
@@ -235,7 +237,8 @@ String filename = "";
                 InputTrd = new JavaTerminal.InputThread();
                 ttyTrd.setCmd(cmd);
                 ttyTrd.start();          //別スレッドで動作させる場合
-                InputTrd.start();
+                //InputTrd.start();
+                //ErrorTrd.start();
                 evt.consume();  //キー入力をなかったことにする
             
             } else {

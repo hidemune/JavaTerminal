@@ -169,71 +169,6 @@ public static ArrayList<String[]> Dict = new ArrayList<String[]>();
         }
     }
     
-    /*
-    static class ExecThread extends Thread{
-        boolean running = false;
-        OutputStream osT;
-        InputStream isT;
-        private String cmdT;
-//        private String strInput = "";
-        public void setCmd(String cmd) {
-            cmdT = cmd;
-        }
-        public void run() {
-            exec(cmdT);
-            cmdT = "";
-        }
-        public void exec(String str) {
-            if (cmdT.equals("")) {
-                running = false;
-                return;
-            }
-            //SwingUtilities.invokeLater(this);
-            running = true;
-            str = str.trim();
-            if (str.trim().equals("")) {
-                return;
-            }
-            String[] cmdarg = str.split(" ");
-
-            try {
-                ProcessBuilder pb = new ProcessBuilder(cmdarg);
-                pb.redirectErrorStream(true);
-
-                Process process = pb.start();
-
-                //StringBuilder sb = new StringBuilder();
-                isT = process.getInputStream();
-                osT = process.getOutputStream();
-                BufferedReader br = new BufferedReader(new InputStreamReader(isT));
-                try {
-                    String line = null;
-                    while ((line = br.readLine()) != null) {
-                        //sb.append(line);
-                        //System.out.println("出力:" + line);
-                        frmT.append(line);
-                        frmT.append("\n");
-                        frmT.repaint();
-                        talk(line);
-                    }
-                } finally {
-                    br.close();
-                    isT.close();
-                    osT.close();
-                    running = false;
-                    frmT.append("終了しました。\n");
-                }
-            //  System.out.println("戻り値：" + process.exitValue());
-            } catch (IOException ex) {
-                talk("エラーです。");
-                frmT.append(ex.toString());
-                frmT.append("\n");
-                talk(ex.toString());
-                running = false;
-            }
-        }
-    }
-    */
     static class ttyThread extends Thread{
         boolean running = false;
         OutputStream osT;
@@ -309,12 +244,13 @@ public static ArrayList<String[]> Dict = new ArrayList<String[]>();
                 } finally {
                     br.close();
                     isT.close();
-                    osT.close();
+                    //osT.close();
                     running = false;
                     frmT.append("終了しました。\n");
                 }
             //  System.out.println("戻り値：" + process.exitValue());
             } catch (Exception ex) {
+                ex.printStackTrace();
                 talk("エラーです。");
                 frmT.append(ex.toString());
                 frmT.append("\n");
@@ -328,24 +264,25 @@ public static ArrayList<String[]> Dict = new ArrayList<String[]>();
             }
             running = true;
             try {
-                System.out.println("tty接続を試みます。");
-                pb = new ProcessBuilder("bash", "-c", "gksudo /bin/su " + user + " < /dev/tty");
-                pb.redirectErrorStream(false);
-
-                process = pb.start();
-                process.waitFor();
+//                frmT.append("tty接続を試みます。\n");
+//                pb = new ProcessBuilder("/sbin/getty", "-l", "/bin/autologinroot", "38400", "tty1");
+//                pb = new ProcessBuilder("/sbin/getty", "38400", "tty1");
                 
-                //StringBuilder sb = new StringBuilder();
+                frmT.append("ログインを試みます。\n");
+                pb = new ProcessBuilder("ssh", "-t", "-t", "hdm@localhost","sudo su " + user + "");
+                
+                process = pb.start();
                 esT = process.getErrorStream();
                 isT = process.getInputStream();
                 osT = process.getOutputStream();
+                
+                //frmT.InputTrd.start();    これは必要に応じて呼び出し
+                frmT.ErrorTrd.start();
                 
                 BufferedReader br = new BufferedReader(new InputStreamReader(isT));
                 try {
                     String line = null;
                     while ((line = br.readLine()) != null) {
-                        //sb.append(line);
-                        //System.out.println("出力:" + line);
                         frmT.append(line);
                         frmT.append("\n");
                         frmT.repaint();
@@ -359,18 +296,18 @@ public static ArrayList<String[]> Dict = new ArrayList<String[]>();
                     running = false;
                     frmT.append("終了しました。\n");
                 }
-              System.out.println("ttyThread戻り値：" + process.exitValue());
             } catch (Exception ex) {
                 talk("エラーです。");
                 frmT.append(ex.toString());
                 frmT.append("\n");
                 talk(ex.toString());
                 running = false;
+                ex.printStackTrace();
             }
         }
     }
     static class InputThread extends Thread{
-        private String cmdT;
+        private String cmdT = "";
         public void run() {
             setInput(cmdT);
             cmdT = "";
@@ -383,6 +320,7 @@ public static ArrayList<String[]> Dict = new ArrayList<String[]>();
                 if (input == null) {
                     return;
                 }
+                //frmT.append("setInput:" + input);
                 frmT.ttyTrd.osT.write(input.getBytes());
                 frmT.ttyTrd.osT.write("\n".getBytes());
                 frmT.ttyTrd.osT.flush();
@@ -393,7 +331,7 @@ public static ArrayList<String[]> Dict = new ArrayList<String[]>();
     }
     
     static class ErrorThread extends Thread{
-        private String cmdT;
+        private String cmdT = "";
         public void run() {
             setOutput();
         }
@@ -404,25 +342,34 @@ public static ArrayList<String[]> Dict = new ArrayList<String[]>();
                 }
                 //frmT.ttyTrd.esT = process.getErrorStream();
                 BufferedReader br = new BufferedReader(new InputStreamReader(frmT.ttyTrd.esT));
-                try {
-                    String line = null;
-                    while ((line = br.readLine()) != null) {
-                        //sb.append(line);
-                        //System.out.println("出力:" + line);
+                
+                String line = null;
+                while (true) {
+                    try {
+                        line = br.readLine();
+                    } catch (Exception e) {
+                        line = "";
+                    }
+                    if (!line.equals("")) {
                         frmT.append(line);
                         frmT.append("\n");
                         frmT.repaint();
                         talk(line);
                     }
-                } finally {
-                    br.close();
-                    frmT.ttyTrd.esT.close();
+                    if (cmdT.equals("stop")) {
+                        break;
+                    }
                 }
+                
+                br.close();
+                frmT.ttyTrd.esT.close();
                 System.out.println("ErrorThreadは終了しました。");
             } catch (IOException ex) {
+                ex.printStackTrace();
                 talk("エラーです。");
                 frmT.append(ex.toString());
                 frmT.append("\n");
+                frmT.repaint();
                 talk(ex.toString());
             }
         }
@@ -460,4 +407,87 @@ public static ArrayList<String[]> Dict = new ArrayList<String[]>();
         String[] ret = (String[]) al.toArray(new String[0]);
         return ret;
     }
+    /*
+    class MyTty implements Tty{
+
+        @Override
+        public boolean init(Questioner q) {
+            frmT.append("init.");
+            return true;
+        }
+
+        @Override
+        public void close() {
+            frmT.append("close.");
+        }
+
+        @Override
+        public void resize(Dimension termSize, Dimension pixelSize) {
+            frmT.append("termSize." + termSize.width + "," + termSize.height);
+            frmT.append("pixelSize." + pixelSize.width + "," + pixelSize.height);
+            
+        }
+
+        @Override
+        public String getName() {
+            return "JavaTerminal";
+        }
+
+        @Override
+        public int read(byte[] buf, int offset, int length) throws IOException {
+            frmT.append("read.");
+            while(frmT.ttyTrd.cmdT.equals("")) {
+                try {
+                    sleep(10);
+                } catch (InterruptedException ex) {
+                    throw new IOException(ex.toString());
+                }
+            }
+            buf = frmT.ttyTrd.cmdT.getBytes();
+            offset = 0;
+            length = buf.length;
+            return 0;
+        }
+
+        @Override
+        public void write(byte[] bytes) throws IOException {
+            frmT.append(bytes.toString());
+        }
+        
+    }
+    class MyQuestioner implements Questioner {
+
+        @Override
+        public String questionVisible(String question, String defValue) {
+            frmT.append(question);
+            while(frmT.ttyTrd.cmdT.equals("")) {
+                try {
+                    sleep(10);
+                } catch (InterruptedException ex) {
+                    Logger.getLogger(JavaTerminal.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            }
+            return frmT.ttyTrd.cmdT;
+        }
+
+        @Override
+        public String questionHidden(String string) {
+            frmT.append(string);
+            while(frmT.ttyTrd.cmdT.equals("")) {
+                try {
+                    sleep(10);
+                } catch (InterruptedException ex) {
+                    Logger.getLogger(JavaTerminal.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            }
+            return frmT.ttyTrd.cmdT;
+        }
+
+        @Override
+        public void showMessage(String message) {
+            frmT.append(message);
+        }
+        
+    }
+    */
 }
