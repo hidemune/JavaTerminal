@@ -269,7 +269,7 @@ public static ArrayList<String[]> Dict = new ArrayList<String[]>();
 //                pb = new ProcessBuilder("/sbin/getty", "38400", "tty1");
                 
                 frmT.append("ログインを試みます。\n");
-                pb = new ProcessBuilder("ssh", "-t", "-t", "hdm@localhost");
+                pb = new ProcessBuilder("ssh", "-t", "-t", user + "@localhost");
                 
                 process = pb.start();
                 esT = process.getErrorStream();

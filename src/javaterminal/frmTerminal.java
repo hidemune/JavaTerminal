@@ -28,6 +28,7 @@ JavaTerminal.InputThread InputTrd ;
 JavaTerminal.ErrorThread ErrorTrd ;
 String mode = "";
 String filename = "";
+int lastPos = 0;
 
     /**
      * Creates new form frmTerminal
@@ -53,12 +54,16 @@ String filename = "";
         
         textMain.append(str);
         textMain.setCaretPosition(textMain.getText().length());
+        lastPos = textMain.getText().length();
     }
     public void append(char str) {
         //str.replaceAll("[\\00-\\x08\\x0a-\\x1f\\x7f]", "");
-        
+        if (str == '\r') {
+            return;
+        }
         textMain.append(String.valueOf(str));
         textMain.setCaretPosition(textMain.getText().length());
+        lastPos = textMain.getText().length();
     }
     /**
      * This method is called from within the constructor to initialize the form.
@@ -254,7 +259,7 @@ String filename = "";
                 evt.consume();  //キー入力をなかったことにする
             
             } else {
-                //System.out.println("Input:" + cmd);
+                
                 InputTrd.setInput(cmd);
                 evt.consume();  //キー入力をなかったことにする
             }
@@ -423,13 +428,18 @@ String filename = "";
         String text = textMain.getText();
         //行の開始位置を探す
         int sta = 0;
-        for (sta = pos - 1; sta > 0; sta--) {
-            char ch = text.charAt(sta);
-            if (ch == '\r') {
-                break;
-            }
-            if (ch == '\n') {
-                break;
+        //現在のキャレット位置が、ラストポジションより後なら、ラスト位置から行末まで
+        if (lastPos < pos) {
+            sta = lastPos;
+        } else {
+            for (sta = pos - 1; sta > 0; sta--) {
+                char ch = text.charAt(sta);
+                if (ch == '\r') {
+                    break;
+                }
+                if (ch == '\n') {
+                    break;
+                }
             }
         }
         //行の終了位置を探す
