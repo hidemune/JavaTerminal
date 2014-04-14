@@ -45,8 +45,19 @@ String filename = "";
         //ErrorTrd.start();
     }
 
+    public void repaintReq() {
+        textMain.repaint();
+    }
     public void append(String str) {
+        str.replaceAll("[\\00-\\x08\\x0a-\\x1f\\x7f]", "");
+        
         textMain.append(str);
+        textMain.setCaretPosition(textMain.getText().length());
+    }
+    public void append(char str) {
+        //str.replaceAll("[\\00-\\x08\\x0a-\\x1f\\x7f]", "");
+        
+        textMain.append(String.valueOf(str));
         textMain.setCaretPosition(textMain.getText().length());
     }
     /**
@@ -91,6 +102,7 @@ String filename = "";
         textMain.setLineWrap(true);
         textMain.setRows(5);
         textMain.setTabSize(0);
+        textMain.setDoubleBuffered(true);
         textMain.setFocusCycleRoot(true);
         textMain.addKeyListener(new java.awt.event.KeyAdapter() {
             public void keyPressed(java.awt.event.KeyEvent evt) {
@@ -233,10 +245,10 @@ String filename = "";
                 }
                 
                 //System.out.println("Exec:" + cmd);
-                ttyTrd = new JavaTerminal.ttyThread();
-                InputTrd = new JavaTerminal.InputThread();
-                ttyTrd.setCmd(cmd);
-                ttyTrd.start();          //別スレッドで動作させる場合
+                //ttyTrd = new JavaTerminal.ttyThread();
+                //InputTrd = new JavaTerminal.InputThread();
+                //ttyTrd.setCmd(cmd);
+                //ttyTrd.start();          //別スレッドで動作させる場合
                 //InputTrd.start();
                 //ErrorTrd.start();
                 evt.consume();  //キー入力をなかったことにする

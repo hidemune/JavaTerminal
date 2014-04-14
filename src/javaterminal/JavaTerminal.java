@@ -238,7 +238,7 @@ public static ArrayList<String[]> Dict = new ArrayList<String[]>();
                         //System.out.println("出力:" + line);
                         frmT.append(line);
                         frmT.append("\n");
-                        frmT.repaint();
+                        frmT.repaintReq();
                         talk(line);
                     }
                 } finally {
@@ -269,7 +269,7 @@ public static ArrayList<String[]> Dict = new ArrayList<String[]>();
 //                pb = new ProcessBuilder("/sbin/getty", "38400", "tty1");
                 
                 frmT.append("ログインを試みます。\n");
-                pb = new ProcessBuilder("ssh", "-t", "-t", "hdm@localhost","sudo su " + user + "");
+                pb = new ProcessBuilder("ssh", "-t", "-t", "hdm@localhost");
                 
                 process = pb.start();
                 esT = process.getErrorStream();
@@ -281,12 +281,13 @@ public static ArrayList<String[]> Dict = new ArrayList<String[]>();
                 
                 BufferedReader br = new BufferedReader(new InputStreamReader(isT));
                 try {
-                    String line = null;
-                    while ((line = br.readLine()) != null) {
+                    char line = 0;
+                    while ((line = (char) br.read()) != 65535) {
+                        //System.out.println((int)line);
                         frmT.append(line);
-                        frmT.append("\n");
-                        frmT.repaint();
-                        talk(line);
+//                        frmT.append("\n");
+                        frmT.repaintReq();
+                        //talk(line);
                     }
                 } finally {
                     br.close();
@@ -353,7 +354,7 @@ public static ArrayList<String[]> Dict = new ArrayList<String[]>();
                     if (!line.equals("")) {
                         frmT.append(line);
                         frmT.append("\n");
-                        frmT.repaint();
+                        frmT.repaintReq();
                         talk(line);
                     }
                     if (cmdT.equals("stop")) {
@@ -369,7 +370,7 @@ public static ArrayList<String[]> Dict = new ArrayList<String[]>();
                 talk("エラーです。");
                 frmT.append(ex.toString());
                 frmT.append("\n");
-                frmT.repaint();
+                frmT.repaintReq();
                 talk(ex.toString());
             }
         }
