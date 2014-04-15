@@ -200,10 +200,10 @@ int lastPos = 0;
     }//GEN-LAST:event_formWindowGainedFocus
 
     private void textMainKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_textMainKeyPressed
-
         
         if (evt.getKeyCode() == evt.VK_TAB) {
-            textMain.insert(System.getProperty("user.dir") + "/", textMain.getCaretPosition());
+//            textMain.insert(System.getProperty("user.dir") + "/", textMain.getCaretPosition());
+            InputTrd.setKey(evt.getKeyChar());
             return;
         }
         
@@ -220,27 +220,27 @@ int lastPos = 0;
             }
             String cmd = getLine();
             textMain.append("\n");
-            
-            
+
+            //特殊なコマンド
+            String[] cmdA = cmd.split(" ");
+            //edit
+            if (cmdA[0].equals("edit")) {
+                //ファイル編集モード
+                mode = "edit";
+                JavaTerminal.talk("編集モードに移行します。保存はコントロールエス、中止はコントロールエックスです。");
+                filename = "tmp.txt";
+                try {
+                    filename = cmdA[1];
+                } catch (Exception e) {
+                    //何もしない
+                }
+                editFile(filename);
+                return;
+            }
+
             //コマンドの実行処理
             if (!ttyTrd.running) {
                 
-                //特殊なコマンド
-                String[] cmdA = cmd.split(" ");
-                //edit
-                if (cmdA[0].equals("edit")) {
-                    //ファイル編集モード
-                    mode = "edit";
-                    JavaTerminal.talk("編集モードに移行します。保存はコントロールエス、中止はコントロールエックスです。");
-                    filename = "tmp.txt";
-                    try {
-                        filename = cmdA[1];
-                    } catch (Exception e) {
-                        //何もしない
-                    }
-                    editFile(filename);
-                    return;
-                }
                 
                 if (cmdA[0].equals("clear")) {
                     //画面クリア

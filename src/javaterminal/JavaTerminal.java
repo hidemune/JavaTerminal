@@ -329,6 +329,18 @@ public static ArrayList<String[]> Dict = new ArrayList<String[]>();
                 Logger.getLogger(JavaTerminal.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
+        public void setKey(char input) {
+            try {
+                if (frmT.ttyTrd.osT == null) {
+                    return;
+                }
+                //frmT.append("setInput:" + input);
+                frmT.ttyTrd.osT.write(input);
+                frmT.ttyTrd.osT.flush();
+            } catch (IOException ex) {
+                Logger.getLogger(JavaTerminal.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
     }
     
     static class ErrorThread extends Thread{
