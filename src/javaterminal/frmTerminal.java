@@ -196,7 +196,7 @@ int lastPos = 0;
     }// </editor-fold>//GEN-END:initComponents
 
     private void formWindowGainedFocus(java.awt.event.WindowEvent evt) {//GEN-FIRST:event_formWindowGainedFocus
-        JavaTerminal.talk("ターミナルがフォーカスを得ました。");
+        //JavaTerminal.talk("ターミナルがフォーカスを得ました。");
     }//GEN-LAST:event_formWindowGainedFocus
 
     private void textMainKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_textMainKeyPressed
