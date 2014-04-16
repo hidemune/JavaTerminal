@@ -36,6 +36,7 @@ public static String talkSh ;
 public static String user ;
 //public static boolean terminate = false;
 public static ArrayList<String[]> Dict = new ArrayList<String[]>();
+//public static Process backTalkP;
 
     /**
      * @param args the command line arguments
@@ -139,6 +140,12 @@ public static ArrayList<String[]> Dict = new ArrayList<String[]>();
         if (str.trim().equals("")) {
             return;
         }
+        //前の発言を中止
+//        try {
+//            backTalkP.destroy();
+//        }catch (Exception e) {
+//            //何もしない
+//        }
         
         //辞書の内容で置換
         str = str.toLowerCase();
@@ -162,10 +169,10 @@ public static ArrayList<String[]> Dict = new ArrayList<String[]>();
         
         Runtime r = Runtime.getRuntime();
         try {
-            Process process = r.exec(new String[] { talkSh, Long.toString(now), str });
+            Process proc = r.exec(new String[] { talkSh, Long.toString(now), str });
             //プロセス終了まで待ち
             if (wait) {
-                InputStream is = process.getInputStream();
+                InputStream is = proc.getInputStream();
                 try {
                     while (is.read() != -1) {
                         //待ち
@@ -311,13 +318,10 @@ public static ArrayList<String[]> Dict = new ArrayList<String[]>();
                 
                 BufferedReader br = new BufferedReader(new InputStreamReader(isT));
                 try {
-                    char line = 0;
-                    while ((line = (char) br.read()) != 65535) {
-                        //System.out.println((int)line);
-                        frmT.append(line);
-//                        frmT.append("\n");
+                    char c = 0;
+                    while ((c = (char) br.read()) != 65535) {
+                        frmT.append(c);
                         frmT.repaintReq();
-                        //talk(line);
                     }
                 } finally {
                     br.close();
@@ -325,7 +329,8 @@ public static ArrayList<String[]> Dict = new ArrayList<String[]>();
                     osT.close();
                     esT.close();
                     running = false;
-                    frmT.append("終了しました。\n");
+                    frmT.append("ログアウトしました。\n");
+                    talk("ログアウトしました。\n");
                 }
             } catch (Exception ex) {
                 talk("エラーです。");

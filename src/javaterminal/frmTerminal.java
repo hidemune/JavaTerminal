@@ -36,6 +36,10 @@ int execPos = 0;
      */
     public frmTerminal() {
         initComponents();
+        
+        //IME止めておく
+        textMain.enableInputMethods(false);
+        
         sshTrd = new JavaTerminal.SshThread();
         InputTrd = new JavaTerminal.InputThread();
         ErrorTrd = new JavaTerminal.ErrorThread();
@@ -286,95 +290,135 @@ int execPos = 0;
         //JavaTerminal.talk("ターミナルがフォーカスを得ました。");
     }//GEN-LAST:event_formWindowGainedFocus
 
-    private void textMainKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_textMainKeyPressed
+    private void talkKeyPressed(java.awt.event.KeyEvent evt) {
+        //押したキーを喋らせる
+        int code = evt.getKeyCode();
+        String hex = Integer.toHexString( code );
+        System.out.println( "hex:" + hex );
+        String key = String.valueOf((char)code);
+        String keyChar = String.valueOf(evt.getKeyChar());
+        System.out.println( "key:" + key );
+        if (!keyChar.trim().equals("")) {
+            JavaTerminal.talkNoWait(keyChar);
+        } else {
+            JavaTerminal.talkNoWait(key);
+        }
+        if (code == evt.VK_UP) {
+            JavaTerminal.talkNoWait("うえ");
+        }
+        if (code == evt.VK_DOWN) {
+            JavaTerminal.talkNoWait("した");
+        }
+        if (code == evt.VK_LEFT) {
+            JavaTerminal.talkNoWait("ひだり");
+        }
+        if (code == evt.VK_RIGHT) {
+            JavaTerminal.talkNoWait("みぎ");
+        }
+        if (code == evt.VK_CONTROL) {
+            JavaTerminal.talkNoWait("コントロール");
+        }
+        if (code == evt.VK_SHIFT) {
+            JavaTerminal.talkNoWait("シフト");
+        }
+        if (code == evt.VK_ALT) {
+            JavaTerminal.talkNoWait("アルト");
+        }
+        if (code == evt.VK_KANJI) {
+            JavaTerminal.talkNoWait("全角半角");
+        }
+        if (code == evt.VK_TAB) {
+            JavaTerminal.talkNoWait("タブ");
+        }
+        if (code == evt.VK_F1) {
+            JavaTerminal.talkNoWait("エフ1");
+        }
+        if (code == evt.VK_F2) {
+            JavaTerminal.talkNoWait("エフ2");
+        }
+        if (code == evt.VK_F3) {
+            JavaTerminal.talkNoWait("エフ3");
+        }
+        if (code == evt.VK_F4) {
+            JavaTerminal.talkNoWait("エフ4");
+        }
+        if (code == evt.VK_F5) {
+            JavaTerminal.talkNoWait("エフ5");
+        }
+        if (code == evt.VK_F6) {
+            JavaTerminal.talkNoWait("エフ6");
+        }
+        if (code == evt.VK_F7) {
+            JavaTerminal.talkNoWait("エフ7");
+        }
+        if (code == evt.VK_F8) {
+            JavaTerminal.talkNoWait("エフ8");
+        }
+        if (code == evt.VK_F9) {
+            JavaTerminal.talkNoWait("エフ9");
+        }
+        if (code == evt.VK_F10) {
+            JavaTerminal.talkNoWait("エフ10");
+        }
+        if (code == evt.VK_F11) {
+            JavaTerminal.talkNoWait("エフ11");
+        }
+        if (code == evt.VK_F12) {
+            JavaTerminal.talkNoWait("エフ12");
+        }
+    }
+    private void textMainMyKeyEvent(java.awt.event.KeyEvent evt) {
 
+        int keyCode = evt.getKeyCode();
         if (!textMain.isEditable()) {
             return;
         }
         //System.out.println("Code" + evt.getKeyCode());
         //System.out.println("Mod" + evt.getModifiers());
         
-        //押したキーを喋らせる
-        String key = String.valueOf(evt.getKeyChar());
-        if (!key.equals("")) {
-            JavaTerminal.talkNoWait(key);
-        }
-        if (evt.getKeyCode() == evt.VK_CONTROL) {
-            JavaTerminal.talkNoWait("コントロール");
-        }
-        if (evt.getKeyCode() == evt.VK_SHIFT) {
-            JavaTerminal.talkNoWait("シフト");
-        }
-        if (evt.getKeyCode() == evt.VK_ALT) {
-            JavaTerminal.talkNoWait("アルト");
-        }
-        if (evt.getKeyCode() == evt.VK_KANJI) {
-            JavaTerminal.talkNoWait("全角半角");
-        }
-        if (evt.getKeyCode() == evt.VK_TAB) {
-            JavaTerminal.talkNoWait("タブ");
-        }
-        if (evt.getKeyCode() == evt.VK_F1) {
-            JavaTerminal.talkNoWait("エフ1");
-        }
-        if (evt.getKeyCode() == evt.VK_F2) {
-            JavaTerminal.talkNoWait("エフ2");
-        }
-        if (evt.getKeyCode() == evt.VK_F3) {
-            JavaTerminal.talkNoWait("エフ3");
-        }
-        if (evt.getKeyCode() == evt.VK_F4) {
-            JavaTerminal.talkNoWait("エフ4");
-        }
-        if (evt.getKeyCode() == evt.VK_F5) {
-            JavaTerminal.talkNoWait("エフ5");
-        }
-        if (evt.getKeyCode() == evt.VK_F6) {
-            JavaTerminal.talkNoWait("エフ6");
-        }
-        if (evt.getKeyCode() == evt.VK_F7) {
-            JavaTerminal.talkNoWait("エフ7");
-        }
-        if (evt.getKeyCode() == evt.VK_F8) {
-            JavaTerminal.talkNoWait("エフ8");
-        }
-        if (evt.getKeyCode() == evt.VK_F9) {
-            JavaTerminal.talkNoWait("エフ9");
-        }
-        if (evt.getKeyCode() == evt.VK_F10) {
-            JavaTerminal.talkNoWait("エフ10");
-        }
-        if (evt.getKeyCode() == evt.VK_F11) {
-            JavaTerminal.talkNoWait("エフ11");
-        }
-        if (evt.getKeyCode() == evt.VK_F12) {
-            JavaTerminal.talkNoWait("エフ12");
-        }
         //チュートリアル専用メッセージ
         if (frmT.sshTrd.tutorial) {
-            if (evt.getKeyCode() == evt.VK_ESCAPE) {
+            if (keyCode == evt.VK_ESCAPE) {
                 JavaTerminal.talkNoWait("エスケープ。ログイン中は、カーソルのある行の内容を読み上げるキーです。");
             }
-            if (evt.getKeyCode() == evt.VK_SPACE) {
+            if (keyCode == evt.VK_SPACE) {
                 JavaTerminal.talkNoWait("スペース");
+            }
+        } else {
+            if (keyCode == evt.VK_ESCAPE) {
+                String line = getLine();
+                JavaTerminal.talkNoWait(line);
+                //return;
             }
         }
         
-//        if (evt.getKeyCode() == evt.VK_TAB) {
-//            textMain.insert(System.getProperty("user.dir") + "/", textMain.getCaretPosition());
-//            InputTrd.setKey((char)0x09);
-//            return;
-//        }
+        //選択範囲あれば(矢印キーを押した時のみ)
+        if ((keyCode == evt.VK_LEFT) || (keyCode == evt.VK_RIGHT)) {
+            String sel = textMain.getSelectedText();
+            if (sel != null) {
+                if (!sel.equals("")) {
+                    JavaTerminal.talkNoWait(sel);
+                    return;
+                }
+            }
+        }
         
+        //押したキーを喋らせる
+        //talkKeyPressed(evt);
+                
         //チュートリアルモード抜けるかチェック
         if (frmT.sshTrd.tutorial) {
-            String cmd = getLine();
-            if (cmd.toLowerCase().trim().endsWith("login")) {
-                System.out.println("login...");
-                frmT.sshTrd.tutorial = false;
+            if (keyCode == evt.VK_ENTER) {
+                String cmd = getLine();
+                if (cmd.toLowerCase().trim().endsWith("login")) {
+                    System.out.println("login...");
+                    frmT.sshTrd.tutorial = false;
+                    return;
+                }
             }
         } else {
             if (sshTrd.running) {
+                //SSH向け入力処理
                 char inp = (char)evt.getKeyChar();
                 if (inp == 65535) {
                     return;
@@ -383,7 +427,7 @@ int execPos = 0;
                     return;
                 }
                 InputTrd.setKey(inp);
-                evt.consume();  //キー入力をなかったことにする。
+                //evt.consume();  //キー入力をなかったことにする。
                 String str = String.valueOf(inp);
                 if (!str.trim().equals("")) {
                     System.out.println(str);
@@ -391,19 +435,24 @@ int execPos = 0;
                     sb.deleteCharAt(sb.length() - 1);
                     textMain.setText(sb.toString());
                 }
+                if (evt.getKeyCode() == evt.VK_ESCAPE) {
+                    String line = getLine();
+                    JavaTerminal.talk(line);
+                    return;
+                }
                 return;         //有無をいわさず抜ける
             }
+        }
+        
+        //チュートリアル中に、以降のコードを実行しないように。
+        if (frmT.sshTrd.tutorial) {
+            return;
         }
         
         //ここから後は、コードの残骸。後で消したい。
         
         
-        if (evt.getKeyCode() == evt.VK_ESCAPE) {
-            String cmd = getLine();
-            JavaTerminal.talk(cmd);
-            return;
-        }
-        
+        /*
         if (evt.getKeyCode() == evt.VK_ENTER) {
             //編集中は何もしない
             if (mode.equals("edit")) {
@@ -433,6 +482,7 @@ int execPos = 0;
                 return;
             }
             
+            /*
             //コマンドの実行処理
             if (!sshTrd.running) {
                 
@@ -454,24 +504,34 @@ int execPos = 0;
                 evt.consume();  //キー入力をなかったことにする
             
             } else {
-                //SSH向けコマンド入力処理
+                //残骸
                 System.out.println("SSH向けコマンド入力処理:" + cmd);
                 InputTrd.setInput(cmd);
                 evt.consume();  //キー入力をなかったことにする
                 return;
             }
+            
         }
-
+        */
+        
+        //ログアウト後は、ここを通る
         if (evt.getKeyCode() == evt.VK_ENTER) {
             //編集中は何もしない
             if (mode.equals("edit")) {
                 return;
             }
             String cmd = getLine();
+            System.err.println(cmd);
             //コマンドの実行処理
-            //System.out.println("Input:" + cmd);
-            InputTrd.setInput(cmd);
-            //evt.consume();  //キー入力をなかったことにする
+            if (cmd.contains("reboot")) {
+                JavaTerminal.talk("リブート処理は、まだ実装されていません。");
+            }
+            if (cmd.contains("shutdown")) {
+                JavaTerminal.talk("シャットダウン処理は、まだ実装されていません。");
+            }
+            if (cmd.contains("login")) {
+                JavaTerminal.talk("再ログイン処理は、まだ実装されていません。");
+            }
             return;
         }
         if (((evt.getModifiers() & KeyEvent.CTRL_MASK) != 0) && (evt.getKeyCode() == evt.VK_X)) {
@@ -497,6 +557,10 @@ int execPos = 0;
                 mode = "";
             }
         }
+    }
+    private void textMainKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_textMainKeyPressed
+        //押したキーを喋らせる
+        talkKeyPressed(evt);
     }//GEN-LAST:event_textMainKeyPressed
     private void editFile(String filename) {
         textMain.setText("");
@@ -561,16 +625,7 @@ int execPos = 0;
     }//GEN-LAST:event_formWindowClosing
 
     private void textMainKeyReleased(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_textMainKeyReleased
-        
-        if (evt.getKeyCode() == evt.VK_ESCAPE) {
-            return;
-        }
-        if (evt.getKeyCode() == evt.VK_ENTER) {
-            return;
-        }
-        
-        //入力の度にコードを読ませる場合
-//        JavaTerminal.talk(String.valueOf((char)evt.getKeyCode()));
+        textMainMyKeyEvent(evt);
     }//GEN-LAST:event_textMainKeyReleased
 
     private void jMenuItem1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem1ActionPerformed
