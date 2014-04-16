@@ -15,6 +15,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import static java.lang.Thread.sleep;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -58,6 +59,7 @@ public static ArrayList<String[]> Dict = new ArrayList<String[]>();
         readDict();
         
         frmT.setVisible(true);
+        
     }
     public static void writeProp() {
         //プロパティファイルの書き込み
@@ -122,8 +124,14 @@ public static ArrayList<String[]> Dict = new ArrayList<String[]>();
             e.printStackTrace();
         }
     }
-    public static void talk(String str) {
+    public static void talkNoWait(String str) {
+        talk(str, false);
+    }
+    public static void talk(String str, boolean wait) {
         //System.out.println(str);
+        if (talkExec == null) {
+            return;
+        }
         if (talkExec.equals("")) {
             return;
         }
@@ -148,29 +156,39 @@ public static ArrayList<String[]> Dict = new ArrayList<String[]>();
             talkExec = "";
             return;
         }
+        
+        //タイムスタンプ
+        long now = System.currentTimeMillis();
+        
         Runtime r = Runtime.getRuntime();
         try {
-            Process process = r.exec(new String[] {
-                talkSh,
-                str });
+            Process process = r.exec(new String[] { talkSh, Long.toString(now), str });
             //プロセス終了まで待ち
-            InputStream is = process.getInputStream();
-            try {
-                while (is.read() != -1) {
-                    //待ち
+            if (wait) {
+                InputStream is = process.getInputStream();
+                try {
+                    while (is.read() != -1) {
+                        //待ち
+                        sleep(10);
+                    }
+                } catch (InterruptedException ex) {
+                    Logger.getLogger(JavaTerminal.class.getName()).log(Level.SEVERE, null, ex);
+                } finally {
+                    is.close();
                 }
-            } finally {
-                is.close();
             }
-            
             
         } catch (IOException ex) {
             Logger.getLogger(JavaTerminal.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
+    public static void talk(String str) {
+        talk(str, true);
+    }
     
-    static class ttyThread extends Thread{
+    static class SshThread extends Thread{
         boolean running = false;
+        boolean tutorial = false;
         OutputStream osT;
         InputStream isT;
         InputStream esT;
@@ -180,7 +198,7 @@ public static ArrayList<String[]> Dict = new ArrayList<String[]>();
         
         public void run() {
             if (cmdT.equals("")) {
-                openTTY();
+                openSSH();
             } else {
                 exec(cmdT);
             }
@@ -239,7 +257,7 @@ public static ArrayList<String[]> Dict = new ArrayList<String[]>();
                         frmT.append(line);
                         frmT.append("\n");
                         frmT.repaintReq();
-                        talk(line);
+                        //talk(line);
                     }
                 } finally {
                     br.close();
@@ -258,18 +276,30 @@ public static ArrayList<String[]> Dict = new ArrayList<String[]>();
                 running = false;
             }
         }
-        public void openTTY() {
+        public void openSSH() {
             if (running) {
                 return;
             }
+            
+            //チュートリアル
+            JavaTerminal.talk("喋るターミナルソフトです。");
+            JavaTerminal.talk("キーボードを押して、それぞれのキーを確認してみて下さい。");
+            JavaTerminal.talkNoWait("その後、「L」「O」「G」「I」「N」「エンター」を順に押してログインしてください。");
+            frmT.editableReq(true);
+            frmT.sshTrd.tutorial = true;
+            
             running = true;
             try {
-//                frmT.append("tty接続を試みます。\n");
-//                pb = new ProcessBuilder("/sbin/getty", "-l", "/bin/autologinroot", "38400", "tty1");
-//                pb = new ProcessBuilder("/sbin/getty", "38400", "tty1");
                 
+                //チュートリアル終了待ち
+                while (frmT.sshTrd.tutorial) {
+                    sleep(100);
+                }
+                JavaTerminal.talkNoWait("パスワードを入力してエンターを押してください。");
                 frmT.append("ログインを試みます。\n");
                 pb = new ProcessBuilder("ssh", "-t", "-t", user + "@localhost");
+                
+                frmT.editableReq(true);      //KeyPress取れない・・・
                 
                 process = pb.start();
                 esT = process.getErrorStream();
@@ -315,32 +345,36 @@ public static ArrayList<String[]> Dict = new ArrayList<String[]>();
         }
         public void setInput(String input) {
             try {
-                if (frmT.ttyTrd.osT == null) {
+                if (frmT.sshTrd.osT == null) {
                     return;
                 }
                 if (input == null) {
                     return;
                 }
-                //frmT.append("setInput:" + input);
-                frmT.ttyTrd.osT.write(input.getBytes());
-                frmT.ttyTrd.osT.write("\n".getBytes());
-                frmT.ttyTrd.osT.flush();
+                frmT.sshTrd.osT.write(input.trim().getBytes());
+                frmT.sshTrd.osT.write("\n".getBytes());
+                frmT.sshTrd.osT.flush();
             } catch (IOException ex) {
                 Logger.getLogger(JavaTerminal.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
+        
         public void setKey(char input) {
             try {
-                if (frmT.ttyTrd.osT == null) {
+                if (frmT.sshTrd.osT == null) {
                     return;
                 }
-                //frmT.append("setInput:" + input);
-                frmT.ttyTrd.osT.write(input);
-                frmT.ttyTrd.osT.flush();
+                if (input == 0x0a) {
+                    System.err.println("改行！");
+                }
+                frmT.sshTrd.osT.write(input);
+                frmT.sshTrd.osT.flush();
+                System.err.println("setKey:" + (int)input);
             } catch (IOException ex) {
                 Logger.getLogger(JavaTerminal.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
+        
     }
     
     static class ErrorThread extends Thread{
@@ -350,11 +384,11 @@ public static ArrayList<String[]> Dict = new ArrayList<String[]>();
         }
         public void setOutput() {
             try {
-                if (frmT.ttyTrd.esT == null) {
+                if (frmT.sshTrd.esT == null) {
                     return;
                 }
                 //frmT.ttyTrd.esT = process.getErrorStream();
-                BufferedReader br = new BufferedReader(new InputStreamReader(frmT.ttyTrd.esT));
+                BufferedReader br = new BufferedReader(new InputStreamReader(frmT.sshTrd.esT));
                 
                 String line = null;
                 while (true) {
@@ -375,7 +409,7 @@ public static ArrayList<String[]> Dict = new ArrayList<String[]>();
                 }
                 
                 br.close();
-                frmT.ttyTrd.esT.close();
+                frmT.sshTrd.esT.close();
                 System.out.println("ErrorThreadは終了しました。");
             } catch (IOException ex) {
                 ex.printStackTrace();

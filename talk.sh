@@ -2,11 +2,13 @@
 #引数を喋らせます。
 
 #Open JTalk
-infile=`date +%H%M%S`.txt
+infile="$1".txt
 outfile=${infile}.wav
 
 echo ${infile}
 echo ${outfile}
+
+shift
 
 echo "$*"
 echo "$*" > ${infile}

@@ -15,7 +15,7 @@ import java.io.FileOutputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
-import javax.swing.SwingUtilities;
+import static javaterminal.JavaTerminal.frmT;
 
 /**
  *
@@ -23,30 +23,29 @@ import javax.swing.SwingUtilities;
  */
 public class frmTerminal extends javax.swing.JFrame {
 //JavaTerminal.ExecThread ExecTrd = new JavaTerminal.ExecThread();
-JavaTerminal.ttyThread ttyTrd ;
+JavaTerminal.SshThread sshTrd ;
 JavaTerminal.InputThread InputTrd ;
 JavaTerminal.ErrorThread ErrorTrd ;
 String mode = "";
 String filename = "";
 int lastPos = 0;
-HtmlFrame frmHtml = new HtmlFrame();
+int execPos = 0;
 
     /**
      * Creates new form frmTerminal
      */
     public frmTerminal() {
         initComponents();
-        ttyTrd = new JavaTerminal.ttyThread();
+        sshTrd = new JavaTerminal.SshThread();
         InputTrd = new JavaTerminal.InputThread();
         ErrorTrd = new JavaTerminal.ErrorThread();
-        //SwingUtilities.();
         
-        //ttyTrd.setCmd(cmd);
-        ttyTrd.start();          //別スレッドで動作させる場合
-        //InputTrd.start();
-        //ErrorTrd.start();
+        sshTrd.start();          //SSHモードで動作
     }
-
+    
+    public void editableReq(boolean flg) {
+        textMain.setEditable(flg);
+    }
     public void repaintReq() {
         textMain.repaint();
     }
@@ -55,14 +54,32 @@ HtmlFrame frmHtml = new HtmlFrame();
         
         textMain.append(str);
         textMain.setCaretPosition(textMain.getText().length());
+//        textMain.setCaretPosition(execPos);
         lastPos = textMain.getText().length();
     }
-    public void append(char str) {
-        //str.replaceAll("[\\00-\\x08\\x0a-\\x1f\\x7f]", "");
-        if (str == '\r') {
+    public void append(char c) {
+        if ((0 <= c) && (c <= 0x08)) {
             return;
         }
-        textMain.append(String.valueOf(str));
+        if ((0x0a <= c) && (c <= 0x0c)) {
+            //return; 改行、垂直タブ、改ページ
+        }
+        if ((0x0e <= c) && (c <= 0x1f)) {
+            return;
+        }
+        if ((c == 0x7f)) {
+            return;
+        }
+        //泥縄対応
+        if ((c == 65535)) {
+            return;
+        }
+        if ((c == 65533)) {
+            return;
+        }
+        
+        System.err.println("append:" + (int)c);
+        textMain.append(String.valueOf(c));
         textMain.setCaretPosition(textMain.getText().length());
         lastPos = textMain.getText().length();
     }
@@ -105,6 +122,7 @@ HtmlFrame frmHtml = new HtmlFrame();
             }
         });
 
+        textMain.setEditable(false);
         textMain.setColumns(20);
         textMain.setFont(new java.awt.Font("VL ゴシック", 0, 12)); // NOI18N
         textMain.setRows(5);
@@ -122,11 +140,21 @@ HtmlFrame frmHtml = new HtmlFrame();
         jScrollPane1.setViewportView(textMain);
 
         jMenu1.setText("File");
+        jMenu1.addFocusListener(new java.awt.event.FocusAdapter() {
+            public void focusGained(java.awt.event.FocusEvent evt) {
+                jMenu1FocusGained(evt);
+            }
+        });
 
         jMenuItem4.setText("保存");
         jMenuItem4.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 jMenuItem4ActionPerformed(evt);
+            }
+        });
+        jMenuItem4.addFocusListener(new java.awt.event.FocusAdapter() {
+            public void focusGained(java.awt.event.FocusEvent evt) {
+                jMenuItem4FocusGained(evt);
             }
         });
         jMenu1.add(jMenuItem4);
@@ -137,6 +165,11 @@ HtmlFrame frmHtml = new HtmlFrame();
                 jMenuItem5ActionPerformed(evt);
             }
         });
+        jMenuItem5.addFocusListener(new java.awt.event.FocusAdapter() {
+            public void focusGained(java.awt.event.FocusEvent evt) {
+                jMenuItem5FocusGained(evt);
+            }
+        });
         jMenu1.add(jMenuItem5);
 
         jMenuItem1.setText("終了");
@@ -145,16 +178,31 @@ HtmlFrame frmHtml = new HtmlFrame();
                 jMenuItem1ActionPerformed(evt);
             }
         });
+        jMenuItem1.addFocusListener(new java.awt.event.FocusAdapter() {
+            public void focusGained(java.awt.event.FocusEvent evt) {
+                jMenuItem1FocusGained(evt);
+            }
+        });
         jMenu1.add(jMenuItem1);
 
         jMenuBar1.add(jMenu1);
 
         jMenu2.setText("Edit");
+        jMenu2.addFocusListener(new java.awt.event.FocusAdapter() {
+            public void focusGained(java.awt.event.FocusEvent evt) {
+                jMenu2FocusGained(evt);
+            }
+        });
 
         jMenuItem2.setText("辞書編集");
         jMenuItem2.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 jMenuItem2ActionPerformed(evt);
+            }
+        });
+        jMenuItem2.addFocusListener(new java.awt.event.FocusAdapter() {
+            public void focusGained(java.awt.event.FocusEvent evt) {
+                jMenuItem2FocusGained(evt);
             }
         });
         jMenu2.add(jMenuItem2);
@@ -165,11 +213,21 @@ HtmlFrame frmHtml = new HtmlFrame();
                 jMenuItem3ActionPerformed(evt);
             }
         });
+        jMenuItem3.addFocusListener(new java.awt.event.FocusAdapter() {
+            public void focusGained(java.awt.event.FocusEvent evt) {
+                jMenuItem3FocusGained(evt);
+            }
+        });
         jMenu2.add(jMenuItem3);
 
         jMenuBar1.add(jMenu2);
 
         jMenu3.setText("Help");
+        jMenu3.addFocusListener(new java.awt.event.FocusAdapter() {
+            public void focusGained(java.awt.event.FocusEvent evt) {
+                jMenu3FocusGained(evt);
+            }
+        });
 
         jMenuItem6.setText("ヘルプ");
         jMenuItem6.addActionListener(new java.awt.event.ActionListener() {
@@ -177,16 +235,31 @@ HtmlFrame frmHtml = new HtmlFrame();
                 jMenuItem6ActionPerformed(evt);
             }
         });
+        jMenuItem6.addFocusListener(new java.awt.event.FocusAdapter() {
+            public void focusGained(java.awt.event.FocusEvent evt) {
+                jMenuItem6FocusGained(evt);
+            }
+        });
         jMenu3.add(jMenuItem6);
 
         jMenuBar1.add(jMenu3);
 
-        jMenu4.setText("Test");
+        jMenu4.setText("拡張機能");
+        jMenu4.addFocusListener(new java.awt.event.FocusAdapter() {
+            public void focusGained(java.awt.event.FocusEvent evt) {
+                jMenu4FocusGained(evt);
+            }
+        });
 
         Web.setText("Web");
         Web.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 WebActionPerformed(evt);
+            }
+        });
+        Web.addFocusListener(new java.awt.event.FocusAdapter() {
+            public void focusGained(java.awt.event.FocusEvent evt) {
+                WebFocusGained(evt);
             }
         });
         jMenu4.add(Web);
@@ -214,12 +287,116 @@ HtmlFrame frmHtml = new HtmlFrame();
     }//GEN-LAST:event_formWindowGainedFocus
 
     private void textMainKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_textMainKeyPressed
-        
-        if (evt.getKeyCode() == evt.VK_TAB) {
-//            textMain.insert(System.getProperty("user.dir") + "/", textMain.getCaretPosition());
-            InputTrd.setKey(evt.getKeyChar());
+
+        if (!textMain.isEditable()) {
             return;
         }
+        //System.out.println("Code" + evt.getKeyCode());
+        //System.out.println("Mod" + evt.getModifiers());
+        
+        //押したキーを喋らせる
+        String key = String.valueOf(evt.getKeyChar());
+        if (!key.equals("")) {
+            JavaTerminal.talkNoWait(key);
+        }
+        if (evt.getKeyCode() == evt.VK_CONTROL) {
+            JavaTerminal.talkNoWait("コントロール");
+        }
+        if (evt.getKeyCode() == evt.VK_SHIFT) {
+            JavaTerminal.talkNoWait("シフト");
+        }
+        if (evt.getKeyCode() == evt.VK_ALT) {
+            JavaTerminal.talkNoWait("アルト");
+        }
+        if (evt.getKeyCode() == evt.VK_KANJI) {
+            JavaTerminal.talkNoWait("全角半角");
+        }
+        if (evt.getKeyCode() == evt.VK_TAB) {
+            JavaTerminal.talkNoWait("タブ");
+        }
+        if (evt.getKeyCode() == evt.VK_F1) {
+            JavaTerminal.talkNoWait("エフ1");
+        }
+        if (evt.getKeyCode() == evt.VK_F2) {
+            JavaTerminal.talkNoWait("エフ2");
+        }
+        if (evt.getKeyCode() == evt.VK_F3) {
+            JavaTerminal.talkNoWait("エフ3");
+        }
+        if (evt.getKeyCode() == evt.VK_F4) {
+            JavaTerminal.talkNoWait("エフ4");
+        }
+        if (evt.getKeyCode() == evt.VK_F5) {
+            JavaTerminal.talkNoWait("エフ5");
+        }
+        if (evt.getKeyCode() == evt.VK_F6) {
+            JavaTerminal.talkNoWait("エフ6");
+        }
+        if (evt.getKeyCode() == evt.VK_F7) {
+            JavaTerminal.talkNoWait("エフ7");
+        }
+        if (evt.getKeyCode() == evt.VK_F8) {
+            JavaTerminal.talkNoWait("エフ8");
+        }
+        if (evt.getKeyCode() == evt.VK_F9) {
+            JavaTerminal.talkNoWait("エフ9");
+        }
+        if (evt.getKeyCode() == evt.VK_F10) {
+            JavaTerminal.talkNoWait("エフ10");
+        }
+        if (evt.getKeyCode() == evt.VK_F11) {
+            JavaTerminal.talkNoWait("エフ11");
+        }
+        if (evt.getKeyCode() == evt.VK_F12) {
+            JavaTerminal.talkNoWait("エフ12");
+        }
+        //チュートリアル専用メッセージ
+        if (frmT.sshTrd.tutorial) {
+            if (evt.getKeyCode() == evt.VK_ESCAPE) {
+                JavaTerminal.talkNoWait("エスケープ。ログイン中は、カーソルのある行の内容を読み上げるキーです。");
+            }
+            if (evt.getKeyCode() == evt.VK_SPACE) {
+                JavaTerminal.talkNoWait("スペース");
+            }
+        }
+        
+//        if (evt.getKeyCode() == evt.VK_TAB) {
+//            textMain.insert(System.getProperty("user.dir") + "/", textMain.getCaretPosition());
+//            InputTrd.setKey((char)0x09);
+//            return;
+//        }
+        
+        //チュートリアルモード抜けるかチェック
+        if (frmT.sshTrd.tutorial) {
+            String cmd = getLine();
+            if (cmd.toLowerCase().trim().endsWith("login")) {
+                System.out.println("login...");
+                frmT.sshTrd.tutorial = false;
+            }
+        } else {
+            if (sshTrd.running) {
+                char inp = (char)evt.getKeyChar();
+                if (inp == 65535) {
+                    return;
+                }
+                if (inp == 65533) {
+                    return;
+                }
+                InputTrd.setKey(inp);
+                evt.consume();  //キー入力をなかったことにする。
+                String str = String.valueOf(inp);
+                if (!str.trim().equals("")) {
+                    System.out.println(str);
+                    StringBuilder sb = new StringBuilder(textMain.getText());
+                    sb.deleteCharAt(sb.length() - 1);
+                    textMain.setText(sb.toString());
+                }
+                return;         //有無をいわさず抜ける
+            }
+        }
+        
+        //ここから後は、コードの残骸。後で消したい。
+        
         
         if (evt.getKeyCode() == evt.VK_ESCAPE) {
             String cmd = getLine();
@@ -232,9 +409,13 @@ HtmlFrame frmHtml = new HtmlFrame();
             if (mode.equals("edit")) {
                 return;
             }
-            String cmd = getLine();
-            textMain.append("\n");
-
+            String cmd = getLine().trim();
+            //textMain.append("\n");      //ここ必要？
+            
+            
+            //最終ポジションを保存
+            execPos = textMain.getText().length();
+            
             //特殊なコマンド
             String[] cmdA = cmd.split(" ");
             //edit
@@ -251,9 +432,9 @@ HtmlFrame frmHtml = new HtmlFrame();
                 editFile(filename);
                 return;
             }
-
+            
             //コマンドの実行処理
-            if (!ttyTrd.running) {
+            if (!sshTrd.running) {
                 
                 
                 if (cmdA[0].equals("clear")) {
@@ -273,12 +454,12 @@ HtmlFrame frmHtml = new HtmlFrame();
                 evt.consume();  //キー入力をなかったことにする
             
             } else {
-                
+                //SSH向けコマンド入力処理
+                System.out.println("SSH向けコマンド入力処理:" + cmd);
                 InputTrd.setInput(cmd);
                 evt.consume();  //キー入力をなかったことにする
+                return;
             }
-            
-            return;
         }
 
         if (evt.getKeyCode() == evt.VK_ENTER) {
@@ -287,9 +468,6 @@ HtmlFrame frmHtml = new HtmlFrame();
                 return;
             }
             String cmd = getLine();
-            textMain.append("\n");
-            
-            
             //コマンドの実行処理
             //System.out.println("Input:" + cmd);
             InputTrd.setInput(cmd);
@@ -303,12 +481,12 @@ HtmlFrame frmHtml = new HtmlFrame();
                 append("強制終了\n");
                 JavaTerminal.talk("強制終了");
                 mode = "";
-            }else if (ttyTrd.running) {
+            }else if (sshTrd.running) {
                 append("強制終了\n");
                 JavaTerminal.talk("強制終了");
                 mode = "";
-                ttyTrd.running = false;
-                ttyTrd.stop();     
+                sshTrd.running = false;
+                sshTrd.stop();     
             }
         }
         if (((evt.getModifiers() & KeyEvent.CTRL_MASK) != 0) && (evt.getKeyCode() == evt.VK_S)) {
@@ -345,6 +523,7 @@ HtmlFrame frmHtml = new HtmlFrame();
         } catch (Exception e) {
             // BufferedReaderオブジェクトのクローズ時の例外捕捉
             e.printStackTrace();
+            JavaTerminal.talk("そのようなファイルはありません。中止はコントロールエックスです。");
         }
         textMain.setText(sb.toString().trim() + crlf);
     }
@@ -369,6 +548,8 @@ HtmlFrame frmHtml = new HtmlFrame();
             bw.print(textMain.getText());
             
             bw.close();
+            
+            JavaTerminal.talk("保存しました。");
         } catch (Exception e) {
             e.printStackTrace();
             return;
@@ -442,9 +623,53 @@ HtmlFrame frmHtml = new HtmlFrame();
         // Web取得
         NetClass net = new NetClass();
         //net.NetClass("http://www.google.co.jp", frmHtml.getTextHtml());
-        net.NetClass("http://tanaka-cs.co.jp", frmHtml.getTextHtml());
-        frmHtml.setVisible(true);
+        net.NetClass("http://tanaka-cs.co.jp", textMain);
+        //frmHtml.setVisible(true);
     }//GEN-LAST:event_WebActionPerformed
+
+    private void jMenu1FocusGained(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_jMenu1FocusGained
+        JavaTerminal.talk("ファイルメニュー");
+    }//GEN-LAST:event_jMenu1FocusGained
+
+    private void jMenuItem4FocusGained(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_jMenuItem4FocusGained
+        JavaTerminal.talk("保存");
+    }//GEN-LAST:event_jMenuItem4FocusGained
+
+    private void jMenuItem5FocusGained(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_jMenuItem5FocusGained
+        JavaTerminal.talk("中止");
+    }//GEN-LAST:event_jMenuItem5FocusGained
+
+    private void jMenuItem1FocusGained(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_jMenuItem1FocusGained
+        JavaTerminal.talk("終了");
+    }//GEN-LAST:event_jMenuItem1FocusGained
+
+    private void jMenu2FocusGained(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_jMenu2FocusGained
+        JavaTerminal.talk("エディットメニュー");
+    }//GEN-LAST:event_jMenu2FocusGained
+
+    private void jMenuItem2FocusGained(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_jMenuItem2FocusGained
+        JavaTerminal.talk("辞書編集");
+    }//GEN-LAST:event_jMenuItem2FocusGained
+
+    private void jMenuItem3FocusGained(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_jMenuItem3FocusGained
+        JavaTerminal.talk("辞書再読込");
+    }//GEN-LAST:event_jMenuItem3FocusGained
+
+    private void jMenu3FocusGained(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_jMenu3FocusGained
+        JavaTerminal.talk("ヘルプメニュー");
+    }//GEN-LAST:event_jMenu3FocusGained
+
+    private void jMenuItem6FocusGained(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_jMenuItem6FocusGained
+        JavaTerminal.talk("ヘルプ");
+    }//GEN-LAST:event_jMenuItem6FocusGained
+
+    private void jMenu4FocusGained(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_jMenu4FocusGained
+        JavaTerminal.talk("拡張機能メニュー");
+    }//GEN-LAST:event_jMenu4FocusGained
+
+    private void WebFocusGained(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_WebFocusGained
+        JavaTerminal.talk("ウェブ");
+    }//GEN-LAST:event_WebFocusGained
     private String getLine() {
         int pos = textMain.getCaretPosition();
         String text = textMain.getText();
@@ -478,9 +703,14 @@ HtmlFrame frmHtml = new HtmlFrame();
         
         textMain.setSelectionStart(sta);
         textMain.setSelectionEnd(ed);
-        String cmd = textMain.getSelectedText().trim();
-        textMain.setSelectionStart(pos);
-        textMain.setSelectionEnd(pos);
+        String cmd = "";
+        try {
+            cmd = textMain.getSelectedText().trim();
+            textMain.setSelectionStart(pos);
+            textMain.setSelectionEnd(pos);
+        }catch (Exception e) {
+            //何もしない
+        }
         //System.out.println(cmd);
         return cmd;
     }
