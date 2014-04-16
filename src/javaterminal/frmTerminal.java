@@ -29,6 +29,7 @@ JavaTerminal.ErrorThread ErrorTrd ;
 String mode = "";
 String filename = "";
 int lastPos = 0;
+HtmlFrame frmHtml = new HtmlFrame();
 
     /**
      * Creates new form frmTerminal
@@ -86,6 +87,8 @@ int lastPos = 0;
         jMenuItem3 = new javax.swing.JMenuItem();
         jMenu3 = new javax.swing.JMenu();
         jMenuItem6 = new javax.swing.JMenuItem();
+        jMenu4 = new javax.swing.JMenu();
+        Web = new javax.swing.JMenuItem();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setTitle("JavaTerminal");
@@ -104,7 +107,6 @@ int lastPos = 0;
 
         textMain.setColumns(20);
         textMain.setFont(new java.awt.Font("VL ゴシック", 0, 12)); // NOI18N
-        textMain.setLineWrap(true);
         textMain.setRows(5);
         textMain.setTabSize(0);
         textMain.setDoubleBuffered(true);
@@ -178,6 +180,18 @@ int lastPos = 0;
         jMenu3.add(jMenuItem6);
 
         jMenuBar1.add(jMenu3);
+
+        jMenu4.setText("Test");
+
+        Web.setText("Web");
+        Web.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                WebActionPerformed(evt);
+            }
+        });
+        jMenu4.add(Web);
+
+        jMenuBar1.add(jMenu4);
 
         setJMenuBar(jMenuBar1);
 
@@ -423,6 +437,14 @@ int lastPos = 0;
         java.awt.event.KeyEvent evtT = new java.awt.event.KeyEvent(this, 0, 0, 0, KeyEvent.VK_ESCAPE);
         textMainKeyPressed(evtT);
     }//GEN-LAST:event_jMenuItem6ActionPerformed
+
+    private void WebActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_WebActionPerformed
+        // Web取得
+        NetClass net = new NetClass();
+        //net.NetClass("http://www.google.co.jp", frmHtml.getTextHtml());
+        net.NetClass("http://tanaka-cs.co.jp", frmHtml.getTextHtml());
+        frmHtml.setVisible(true);
+    }//GEN-LAST:event_WebActionPerformed
     private String getLine() {
         int pos = textMain.getCaretPosition();
         String text = textMain.getText();
@@ -498,9 +520,11 @@ int lastPos = 0;
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JMenuItem Web;
     private javax.swing.JMenu jMenu1;
     private javax.swing.JMenu jMenu2;
     private javax.swing.JMenu jMenu3;
+    private javax.swing.JMenu jMenu4;
     private javax.swing.JMenuBar jMenuBar1;
     private javax.swing.JMenuItem jMenuItem1;
     private javax.swing.JMenuItem jMenuItem2;
