@@ -112,7 +112,8 @@ private boolean uwagaki = true;
         bwC.println("log:" + hex + ":" + (int)c + ":" + String.valueOf(c));
     }
     public void editableReq(boolean flg) {
-        textMain.setEditable(flg);
+        //textMain.setEditable(flg);
+        textMain.setEditable(true);
     }
     public void repaintReq() {
         textMain.repaint();
@@ -814,10 +815,10 @@ private boolean uwagaki = true;
         } else {
             if (sshTrd.running) {
                 //SSH向け入力処理
-                char cd = (char) evt.getKeyCode();
+                int cd = evt.getKeyCode();
                 char kc = evt.getKeyChar();
-                char setChar = 0;
-                if (!String.valueOf(kc).trim().equals("")) {
+                int setChar = 0;
+                if ((0x20 <= cd) || (cd != 0x7f)) {
                     setChar = kc;
                 } else {
                     setChar = cd;
@@ -826,6 +827,12 @@ private boolean uwagaki = true;
                 if (((evt.getModifiers() & KeyEvent.CTRL_MASK) != 0)) {
                     setChar = (char)((int)setChar - 0x40);
                 }
+                //カーソルキーは定数をセット
+                if (cd == KeyEvent.VK_DOWN) {
+                    setChar = 0x1f;
+                }
+                
+                //SSH送信
                 InputTrd.setKey(setChar);
                 
                 evt.consume();  //キー入力をなかったことにする。
@@ -1064,6 +1071,7 @@ private boolean uwagaki = true;
     }//GEN-LAST:event_textMainCaretUpdate
 
     private void textMainKeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_textMainKeyTyped
+        /*
         //エコーと重複するので１文字消す
         if ((frmT.sshTrd.running) && (!frmT.sshTrd.tutorial)) {
             String str = String.valueOf(evt.getKeyChar());
@@ -1074,6 +1082,7 @@ private boolean uwagaki = true;
                 textMain.setText(sb.toString());
             }
         }
+        */
     }//GEN-LAST:event_textMainKeyTyped
     private String getLine() {
         int pos = textMain.getCaretPosition();
