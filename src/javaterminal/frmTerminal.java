@@ -109,7 +109,8 @@ PrintWriter bwC;
     }
     
     public void consoleLogger(char c) {
-        bwC.println("log:" + (int)c + ":" + String.valueOf(c));
+        String hex = Integer.toHexString( (int)c );
+        bwC.println("log:" + hex + ":" + (int)c + ":" + String.valueOf(c));
     }
     public void editableReq(boolean flg) {
         textMain.setEditable(flg);
@@ -161,6 +162,12 @@ PrintWriter bwC;
             }
         }
         textMain.setCaretPosition(i);
+        if (row < y) {
+            for (int j = row; j < y; j++) {
+                textMain.append("\n");
+            }
+            textMain.setCaretPosition(textMain.getText().length());
+        }
     }
     private int getPos() {
         int ret = 0;
@@ -188,7 +195,7 @@ PrintWriter bwC;
     private void downCar(int num) {
         int y = getPos();
         y = y + num;
-        setPos(num);
+        setPos(y);
     }
     private void migiDel() {
         int pos = textMain.getCaretPosition();
@@ -233,12 +240,18 @@ PrintWriter bwC;
             }
         }
     }
-    public void append(char c) {
+    public void appendC(char c) {
         consoleLogger(c);
         String hex = Integer.toHexString( (int)c );
-        
+        System.err.println("echo:" + hex);
+//        if (c == '位') {
+//            System.err.println("debug:BreakPoint");
+//        }
         //エスケープシーケンス対応
         if (c == 0x1b) {
+            Pn = 0;
+            Pn2 = 0;
+            escMode = "";
             //エスケープ開始
             if (escS != null) {
                 //試しに出力
@@ -297,6 +310,14 @@ PrintWriter bwC;
                 }
                 //CSI J コマンド
                 if ((escMode.equals("CSI")) && (c == 'J')) {
+                    if (Pn == 0) {
+                        //以降クリア
+                        textMain.setText(textMain.getText().substring(0, textMain.getCaretPosition()));
+                    }
+                    if (Pn == 0) {
+                        //以前クリア
+                        textMain.setText(textMain.getText().substring(textMain.getCaretPosition()));
+                    }
                     if (Pn == 2) {
                         //Clear
                         textMain.setText("");
@@ -310,12 +331,12 @@ PrintWriter bwC;
                 if ((escMode.equals("CSI")) && (c == 'H')) {
                     //textMain.setRows(Pn);
                     //textMain.setColumns(Pn2);
-                    setPos(Pn - 1);
+                    setPos(Pn2);
                     int pos = textMain.getCaretPosition();
                     try {
-                        textMain.setCaretPosition(pos + Pn2 - 1);
+                        textMain.setCaretPosition(pos + Pn);
                     } catch (Exception e) {
-                        textMain.setCaretPosition(textMain.getText().length());
+                        //textMain.setCaretPosition(textMain.getText().length());
                     }
                     //ESC Mode 終了
                     escMode = "";
@@ -395,20 +416,24 @@ PrintWriter bwC;
         }
         
         //カーソル位置に挿入する必要あり
-        /*
-        textMain.append(String.valueOf(c));
-        textMain.setCaretPosition(textMain.getText().length());
-        lastPos = textMain.getText().length();
-        */
-        StringBuilder sb = new StringBuilder(textMain.getText());
         int pos = textMain.getCaretPosition();
-        sb.insert(pos, c);
-        String str = sb.toString();
-        textMain.setText(str);
-        try {
-            textMain.setCaretPosition(pos + 1);
-        }catch (Exception e) {
-            textMain.setCaretPosition(textMain.getText().length());
+        StringBuilder sb = new StringBuilder(textMain.getText());
+        int len = textMain.getText().length();
+        if (pos >= len) {
+            sb.append(String.valueOf(c));
+            lastPos = sb.length();
+            textMain.setText(sb.toString());
+            textMain.setCaretPosition(lastPos);
+        } else {
+            sb.insert(pos, String.valueOf(c));
+            textMain.setText(sb.toString());
+            try {
+                lastPos = pos + 1;
+                textMain.setCaretPosition(lastPos);
+            }catch (Exception e) {
+                System.err.println("lastPos" + lastPos + ": len" + len);
+                textMain.setCaretPosition(textMain.getText().length());
+            }
         }
     }
     /**
@@ -470,6 +495,9 @@ PrintWriter bwC;
             }
             public void keyReleased(java.awt.event.KeyEvent evt) {
                 textMainKeyReleased(evt);
+            }
+            public void keyTyped(java.awt.event.KeyEvent evt) {
+                textMainKeyTyped(evt);
             }
         });
         scroll.setViewportView(textMain);
@@ -615,11 +643,11 @@ PrintWriter bwC;
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(scroll, javax.swing.GroupLayout.DEFAULT_SIZE, 707, Short.MAX_VALUE)
+            .addComponent(scroll, javax.swing.GroupLayout.DEFAULT_SIZE, 834, Short.MAX_VALUE)
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(scroll, javax.swing.GroupLayout.DEFAULT_SIZE, 368, Short.MAX_VALUE)
+            .addComponent(scroll, javax.swing.GroupLayout.DEFAULT_SIZE, 436, Short.MAX_VALUE)
         );
 
         pack();
@@ -763,22 +791,19 @@ PrintWriter bwC;
                 } else {
                     setChar = cd;
                 }
-                //System.err.println("set:" + setChar);
+                //コントロールキーと同時押しの場合
+                if (((evt.getModifiers() & KeyEvent.CTRL_MASK) != 0)) {
+                    setChar = (char)((int)setChar - 0x40);
+                }
                 InputTrd.setKey(setChar);
                 
-                //evt.consume();  //キー入力をなかったことにする。
-                //String str = String.valueOf(setChar);
-                //if (!str.trim().equals("")) {
-                    //System.out.println(str);
-                    //StringBuilder sb = new StringBuilder(textMain.getText());
-                    //sb.deleteCharAt(sb.length() - 1);
-                    //textMain.setText(sb.toString());
-                //}
                 if (evt.getKeyCode() == evt.VK_ESCAPE) {
                     String line = getLine();
                     JavaTerminal.talk(line);
+                    evt.consume();  //キー入力をなかったことにする。
                     return;
                 }
+                evt.consume();  //キー入力をなかったことにする。
                 return;         //有無をいわさず抜ける
             }
         }
@@ -1076,6 +1101,10 @@ PrintWriter bwC;
     private void textMainCaretUpdate(javax.swing.event.CaretEvent evt) {//GEN-FIRST:event_textMainCaretUpdate
         
     }//GEN-LAST:event_textMainCaretUpdate
+
+    private void textMainKeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_textMainKeyTyped
+        //textMainMyKeyEvent(evt);
+    }//GEN-LAST:event_textMainKeyTyped
     private String getLine() {
         int pos = textMain.getCaretPosition();
         String text = textMain.getText();

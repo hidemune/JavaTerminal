@@ -320,7 +320,7 @@ public static ArrayList<String[]> Dict = new ArrayList<String[]>();
                 try {
                     char c = 0;
                     while ((c = (char) br.read()) != 65535) {
-                        frmT.append(c);
+                        frmT.appendC(c);
                         frmT.repaintReq();
                     }
                 } finally {
@@ -365,11 +365,12 @@ public static ArrayList<String[]> Dict = new ArrayList<String[]>();
         }
         
         public void setKey(char input) {
+            String hex = Integer.toHexString( (int)input );
+            System.out.println("set:" + hex + "(" + String.valueOf(input) + ")");
             if ((input < 0) || (0xff < input)) {
                 return;
             }
-            String hex = Integer.toHexString( (int)input );
-            System.out.println("set:" + hex + "(" + String.valueOf(input) + ")");
+            
             try {
                 if (frmT.sshTrd.osT == null) {
                     return;
