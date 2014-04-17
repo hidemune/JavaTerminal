@@ -6,6 +6,9 @@
 
 package javaterminal;
 
+import java.awt.Rectangle;
+import java.awt.event.InputEvent;
+import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -15,7 +18,14 @@ import java.io.FileOutputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
+import java.util.ArrayList;
 import static javaterminal.JavaTerminal.frmT;
+import javax.swing.InputMap;
+import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
+import javax.swing.KeyStroke;
+import javax.swing.text.Document;
+import javax.swing.text.Element;
 
 /**
  *
@@ -30,6 +40,11 @@ String mode = "";
 String filename = "";
 int lastPos = 0;
 int execPos = 0;
+private ArrayList<Integer> escS;
+private String escMode = "";
+private int Pn = 0;
+private int Pn2 = 0;
+PrintWriter bwC;
 
     /**
      * Creates new form frmTerminal
@@ -39,7 +54,53 @@ int execPos = 0;
         
         //IME止めておく
         textMain.enableInputMethods(false);
+        InputMap imputMap=textMain.getInputMap(textMain.WHEN_IN_FOCUSED_WINDOW);
         
+        ArrayList<KeyStroke> keyS = new ArrayList<KeyStroke>();
+        for (int i = 0; i < 255; i++) {
+            keyS.add(KeyStroke.getKeyStroke((i),0));
+            imputMap.put(keyS.get(i), "none");
+        }
+        
+        /*
+        textMain.addKeyListener(new KeyAdapter() {
+                public void keyTyped(KeyEvent e){}
+                public void keyPressed(KeyEvent e)
+                {
+                        int mod = e.getModifiersEx();
+                        if(((mod & InputEvent.CTRL_DOWN_MASK)!=0)&&(e.getKeyCode()==KeyEvent.VK_ENTER))//ctrl + enter が押下された時、改行挿入
+                        {
+                                JTextArea target=(JTextArea)e.getSource();
+                                int caretPosition=target.getCaretPosition();
+                                target.insert("\n",caretPosition);
+                        }
+                        else if((e.getKeyCode()==KeyEvent.VK_ENTER)){}//enterが押下された時
+                        else{}//その他のキー
+                }
+                public void keyReleased(KeyEvent e){}
+        });*/
+
+        //CSVの書き込み
+        try {
+            File csv = new File("./console.log"); // CSVデータファイル
+            //古いファイル
+            if (csv.exists()) {
+                csv.delete();
+            }
+            // 常に新規作成
+            
+            bwC = new PrintWriter(new BufferedWriter(new OutputStreamWriter(new FileOutputStream(csv),"UTF-8")));
+            
+            //bwC.print(textMain.getText());
+            
+            //bwC.close();
+            
+            //JavaTerminal.talk("保存しました。");
+        } catch (Exception e) {
+            e.printStackTrace();
+            return;
+        }
+	
         sshTrd = new JavaTerminal.SshThread();
         InputTrd = new JavaTerminal.InputThread();
         ErrorTrd = new JavaTerminal.ErrorThread();
@@ -47,6 +108,9 @@ int execPos = 0;
         sshTrd.start();          //SSHモードで動作
     }
     
+    public void consoleLogger(char c) {
+        bwC.println("log:" + (int)c + ":" + String.valueOf(c));
+    }
     public void editableReq(boolean flg) {
         textMain.setEditable(flg);
     }
@@ -61,31 +125,291 @@ int execPos = 0;
 //        textMain.setCaretPosition(execPos);
         lastPos = textMain.getText().length();
     }
+    private void migiSakujyo() {
+        //カーソル右を削除します。
+        StringBuilder sb = new StringBuilder();
+        sb.append(textMain.getText());
+        int len = textMain.getText().length();
+        int pos = textMain.getCaretPosition();
+        for (int i = pos; i < len; i++) {
+            if (sb.toString().charAt(pos) != '\n') {
+                sb.deleteCharAt(pos);
+            }
+        }
+    }
+    private void insertLine(int num) {
+        System.err.println("改行の挿入:" + num + "行");
+        StringBuilder sb = new StringBuilder(textMain.getText());
+        int pos = textMain.getCaretPosition();
+        for (int i = 0; i < num; i++) {
+            sb.insert(pos, "\r\n");
+        }
+        textMain.setText(sb.toString());
+    }
+    private void setPos(int y) {
+        int row = 0;
+        String str = textMain.getText();
+        //行番号を無理やり数える
+        int i = 0;
+        for (i = 0; i < str.length(); i++) {
+            if (row == y) {
+                break;
+            }
+            String ch = str.substring(i, i+1);
+            if (ch.equals("\n")) {
+                row = row + 1;
+            }
+        }
+        textMain.setCaretPosition(i);
+    }
+    private int getPos() {
+        int ret = 0;
+        
+        int pos = textMain.getCaretPosition();
+        String str = textMain.getText();
+        //行番号を無理やり数える
+        for (int i = 0; i < pos; i++) {
+            String ch = str.substring(i, i+1);
+            if (ch.equals("\n")) {
+                ret = ret + 1;
+            }
+        }
+        
+        return ret;
+    }
+    private void upCar(int num) {
+        int y = getPos();
+        y = y - num;
+        if (y < 0) {
+            y = 0;
+        }
+        setPos(num);
+    }
+    private void downCar(int num) {
+        int y = getPos();
+        y = y + num;
+        setPos(num);
+    }
+    private void migiDel() {
+        int pos = textMain.getCaretPosition();
+        StringBuilder sb = new StringBuilder(textMain.getText());
+        int len = sb.length();
+        for (int i = pos; i < len; i++) {
+            try {
+                if (sb.toString().substring(i, i + 1).equals("\n")) {
+                    break;
+                }
+            } catch (Exception e) {
+                break;
+            }
+            sb.deleteCharAt(pos);
+        }
+    }
+    private void hidariDel() {
+        int pos = textMain.getCaretPosition();
+        StringBuilder sb = new StringBuilder(textMain.getText());
+        int len = sb.length();
+        for (int i = pos; i > 0; i--) {
+            try {
+                if (sb.toString().substring(i, i + 1).equals("\n")) {
+                    break;
+                }
+            } catch (Exception e) {
+                break;
+            }
+            sb.deleteCharAt(i);
+        }
+    }
+    private void lightCar(int num) {
+        int pos = textMain.getCaretPosition();
+        for (int i = 0; i < num; i++) {
+            try {
+                if (textMain.getText().toString().substring(pos + i, pos + i + 1).equals("\n")) {
+                    break;
+                }
+                textMain.setCaretPosition(pos + i + 1);
+            } catch (Exception e) {
+                break;
+            }
+        }
+    }
     public void append(char c) {
+        consoleLogger(c);
+        String hex = Integer.toHexString( (int)c );
+        
+        //エスケープシーケンス対応
+        if (c == 0x1b) {
+            //エスケープ開始
+            if (escS != null) {
+                //試しに出力
+                for (int i = 0; i < escS.size(); i++) {
+                    System.err.print(":" + String.valueOf((char)(int)escS.get(i)));
+                }
+                System.err.println();
+            }
+            escS = new ArrayList<Integer>();
+            escS.add((int)c);
+            return;
+        } else {
+            if (escS != null) {
+                escS.add((int)c);
+                //^[
+                if (c == '[') {
+                    //CSI 開始
+                    escMode = "CSI";
+                    Pn = 0;
+                    Pn2 = 0;
+                }
+                //CSI A 上
+                if ((escMode.equals("CSI")) && (c == 'A')) {
+                    upCar(Pn);
+                    //ESC Mode 終了
+                    escMode = "";
+                    escS = null;
+                    return;
+                }
+                //CSI B 下
+                if ((escMode.equals("CSI")) && (c == 'B')) {
+                    downCar(Pn);
+                    //ESC Mode 終了
+                    escMode = "";
+                    escS = null;
+                    return;
+                }
+                //CSI C 右
+                if ((escMode.equals("CSI")) && (c == 'C')) {
+                    lightCar(Pn);
+                    //ESC Mode 終了
+                    escMode = "";
+                    escS = null;
+                    return;
+                }
+                //CSI m 文字属性コマンド 無視
+                if ((escMode.equals("CSI")) && (c == 'm')) {
+                    if (Pn == 0) {
+                        //Clear
+                        //textMain.setText("");
+                    }
+                    //ESC Mode 終了
+                    escMode = "";
+                    escS = null;
+                    return;
+                }
+                //CSI J コマンド
+                if ((escMode.equals("CSI")) && (c == 'J')) {
+                    if (Pn == 2) {
+                        //Clear
+                        textMain.setText("");
+                    }
+                    //ESC Mode 終了
+                    escMode = "";
+                    escS = null;
+                    return;
+                }
+                //CSI H カーソル位置変更
+                if ((escMode.equals("CSI")) && (c == 'H')) {
+                    //textMain.setRows(Pn);
+                    //textMain.setColumns(Pn2);
+                    setPos(Pn - 1);
+                    int pos = textMain.getCaretPosition();
+                    try {
+                        textMain.setCaretPosition(pos + Pn2 - 1);
+                    } catch (Exception e) {
+                        textMain.setCaretPosition(textMain.getText().length());
+                    }
+                    //ESC Mode 終了
+                    escMode = "";
+                    escS = null;
+                    return;
+                }
+                //CSI K 右側削除
+                if ((escMode.equals("CSI")) && (c == 'K')) {
+                    if ((Pn == 0) || (Pn == 2)) {
+                        //右側削除
+                        migiDel();
+                    }
+                    if ((Pn == 1) || (Pn == 2)) {
+                        //左側削除
+                        hidariDel();
+                    }
+                    //ESC Mode 終了
+                    escMode = "";
+                    escS = null;
+                    return;
+                }
+                //CSI r スクロール範囲指定
+                if ((escMode.equals("CSI")) && (c == 'r')) {
+                    textMain.setText("");
+                    insertLine(Pn);
+                    //ESC Mode 終了
+                    escMode = "";
+                    escS = null;
+                    return;
+                }
+                //CSI L カーソル位置に行挿入
+                if ((escMode.equals("CSI")) && (c == 'L')) {
+                    insertLine(Pn);
+                    //ESC Mode 終了
+                    escMode = "";
+                    escS = null;
+                    return;
+                }
+                //CSI 数字
+                if ((escMode.equals("CSI")) && (('0' <= c) && (c <= '9'))) {
+                    Pn = Pn * 10 + Integer.parseInt(String.valueOf(c));
+                    return;
+                }
+                //CSI ; 数字シフト
+                if ((escMode.equals("CSI")) && (c <= ';')) {
+                    Pn2 = Pn;
+                    Pn = 0;
+                    return;
+                }
+                
+                return;
+            }
+        }
         if ((0 <= c) && (c <= 0x08)) {
+            System.err.println("ctrlCd:" + hex);
             return;
         }
         if ((0x0a <= c) && (c <= 0x0c)) {
             //return; 改行、垂直タブ、改ページ
         }
         if ((0x0e <= c) && (c <= 0x1f)) {
+            System.err.println("ctrlCd:" + hex);
             return;
         }
         if ((c == 0x7f)) {
+            System.err.println("ctrlCd:" + hex);
             return;
         }
         //泥縄対応
         if ((c == 65535)) {
+            System.err.println("ctrlCd:" + hex);
             return;
         }
         if ((c == 65533)) {
+            System.err.println("ctrlCd:" + hex);
             return;
         }
         
-        System.err.println("append:" + (int)c);
+        //カーソル位置に挿入する必要あり
+        /*
         textMain.append(String.valueOf(c));
         textMain.setCaretPosition(textMain.getText().length());
         lastPos = textMain.getText().length();
+        */
+        StringBuilder sb = new StringBuilder(textMain.getText());
+        int pos = textMain.getCaretPosition();
+        sb.insert(pos, c);
+        String str = sb.toString();
+        textMain.setText(str);
+        try {
+            textMain.setCaretPosition(pos + 1);
+        }catch (Exception e) {
+            textMain.setCaretPosition(textMain.getText().length());
+        }
     }
     /**
      * This method is called from within the constructor to initialize the form.
@@ -96,7 +420,7 @@ int execPos = 0;
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
-        jScrollPane1 = new javax.swing.JScrollPane();
+        scroll = new javax.swing.JScrollPane();
         textMain = new javax.swing.JTextArea();
         jMenuBar1 = new javax.swing.JMenuBar();
         jMenu1 = new javax.swing.JMenu();
@@ -110,6 +434,7 @@ int execPos = 0;
         jMenuItem6 = new javax.swing.JMenuItem();
         jMenu4 = new javax.swing.JMenu();
         Web = new javax.swing.JMenuItem();
+        viEndMenu = new javax.swing.JMenuItem();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setTitle("JavaTerminal");
@@ -129,10 +454,16 @@ int execPos = 0;
         textMain.setEditable(false);
         textMain.setColumns(20);
         textMain.setFont(new java.awt.Font("VL ゴシック", 0, 12)); // NOI18N
+        textMain.setLineWrap(true);
         textMain.setRows(5);
-        textMain.setTabSize(0);
+        textMain.setTabSize(4);
         textMain.setDoubleBuffered(true);
         textMain.setFocusCycleRoot(true);
+        textMain.addCaretListener(new javax.swing.event.CaretListener() {
+            public void caretUpdate(javax.swing.event.CaretEvent evt) {
+                textMainCaretUpdate(evt);
+            }
+        });
         textMain.addKeyListener(new java.awt.event.KeyAdapter() {
             public void keyPressed(java.awt.event.KeyEvent evt) {
                 textMainKeyPressed(evt);
@@ -141,7 +472,7 @@ int execPos = 0;
                 textMainKeyReleased(evt);
             }
         });
-        jScrollPane1.setViewportView(textMain);
+        scroll.setViewportView(textMain);
 
         jMenu1.setText("File");
         jMenu1.addFocusListener(new java.awt.event.FocusAdapter() {
@@ -268,6 +599,14 @@ int execPos = 0;
         });
         jMenu4.add(Web);
 
+        viEndMenu.setText("vi終了");
+        viEndMenu.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                viEndMenuActionPerformed(evt);
+            }
+        });
+        jMenu4.add(viEndMenu);
+
         jMenuBar1.add(jMenu4);
 
         setJMenuBar(jMenuBar1);
@@ -276,11 +615,11 @@ int execPos = 0;
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 707, Short.MAX_VALUE)
+            .addComponent(scroll, javax.swing.GroupLayout.DEFAULT_SIZE, 707, Short.MAX_VALUE)
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 368, Short.MAX_VALUE)
+            .addComponent(scroll, javax.swing.GroupLayout.DEFAULT_SIZE, 368, Short.MAX_VALUE)
         );
 
         pack();
@@ -370,9 +709,9 @@ int execPos = 0;
     private void textMainMyKeyEvent(java.awt.event.KeyEvent evt) {
 
         int keyCode = evt.getKeyCode();
-        if (!textMain.isEditable()) {
-            return;
-        }
+        //if (!textMain.isEditable()) {
+        //    return;
+        //}
         //System.out.println("Code" + evt.getKeyCode());
         //System.out.println("Mod" + evt.getModifiers());
         
@@ -398,14 +737,11 @@ int execPos = 0;
             if (sel != null) {
                 if (!sel.equals("")) {
                     JavaTerminal.talkNoWait(sel);
-                    return;
+                    //return;
                 }
             }
         }
         
-        //押したキーを喋らせる
-        //talkKeyPressed(evt);
-                
         //チュートリアルモード抜けるかチェック
         if (frmT.sshTrd.tutorial) {
             if (keyCode == evt.VK_ENTER) {
@@ -419,22 +755,25 @@ int execPos = 0;
         } else {
             if (sshTrd.running) {
                 //SSH向け入力処理
-                char inp = (char)evt.getKeyChar();
-                if (inp == 65535) {
-                    return;
+                char cd = (char) evt.getKeyCode();
+                char kc = evt.getKeyChar();
+                char setChar = 0;
+                if (!String.valueOf(kc).trim().equals("")) {
+                    setChar = kc;
+                } else {
+                    setChar = cd;
                 }
-                if (inp == 65533) {
-                    return;
-                }
-                InputTrd.setKey(inp);
+                //System.err.println("set:" + setChar);
+                InputTrd.setKey(setChar);
+                
                 //evt.consume();  //キー入力をなかったことにする。
-                String str = String.valueOf(inp);
-                if (!str.trim().equals("")) {
-                    System.out.println(str);
-                    StringBuilder sb = new StringBuilder(textMain.getText());
-                    sb.deleteCharAt(sb.length() - 1);
-                    textMain.setText(sb.toString());
-                }
+                //String str = String.valueOf(setChar);
+                //if (!str.trim().equals("")) {
+                    //System.out.println(str);
+                    //StringBuilder sb = new StringBuilder(textMain.getText());
+                    //sb.deleteCharAt(sb.length() - 1);
+                    //textMain.setText(sb.toString());
+                //}
                 if (evt.getKeyCode() == evt.VK_ESCAPE) {
                     String line = getLine();
                     JavaTerminal.talk(line);
@@ -559,6 +898,7 @@ int execPos = 0;
         }
     }
     private void textMainKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_textMainKeyPressed
+        textMainMyKeyEvent(evt);
         //押したキーを喋らせる
         talkKeyPressed(evt);
     }//GEN-LAST:event_textMainKeyPressed
@@ -622,10 +962,11 @@ int execPos = 0;
 
     private void formWindowClosing(java.awt.event.WindowEvent evt) {//GEN-FIRST:event_formWindowClosing
         JavaTerminal.writeProp();
+        bwC.close();
     }//GEN-LAST:event_formWindowClosing
 
     private void textMainKeyReleased(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_textMainKeyReleased
-        textMainMyKeyEvent(evt);
+
     }//GEN-LAST:event_textMainKeyReleased
 
     private void jMenuItem1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem1ActionPerformed
@@ -725,6 +1066,16 @@ int execPos = 0;
     private void WebFocusGained(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_WebFocusGained
         JavaTerminal.talk("ウェブ");
     }//GEN-LAST:event_WebFocusGained
+
+    private void viEndMenuActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_viEndMenuActionPerformed
+        String str = "viをとにかく終了したい場合は、コントロールエーを押して全選択し、\nデリートしてからだとハマらなくて済みます。\n";
+        textMain.setText(str);
+        InputTrd.setInput((char)0x1b + ":q!\n");
+    }//GEN-LAST:event_viEndMenuActionPerformed
+
+    private void textMainCaretUpdate(javax.swing.event.CaretEvent evt) {//GEN-FIRST:event_textMainCaretUpdate
+        
+    }//GEN-LAST:event_textMainCaretUpdate
     private String getLine() {
         int pos = textMain.getCaretPosition();
         String text = textMain.getText();
@@ -817,7 +1168,8 @@ int execPos = 0;
     private javax.swing.JMenuItem jMenuItem4;
     private javax.swing.JMenuItem jMenuItem5;
     private javax.swing.JMenuItem jMenuItem6;
-    private javax.swing.JScrollPane jScrollPane1;
+    private javax.swing.JScrollPane scroll;
     private javax.swing.JTextArea textMain;
+    private javax.swing.JMenuItem viEndMenu;
     // End of variables declaration//GEN-END:variables
 }

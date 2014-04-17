@@ -365,16 +365,21 @@ public static ArrayList<String[]> Dict = new ArrayList<String[]>();
         }
         
         public void setKey(char input) {
+            if ((input < 0) || (0xff < input)) {
+                return;
+            }
+            String hex = Integer.toHexString( (int)input );
+            System.out.println("set:" + hex + "(" + String.valueOf(input) + ")");
             try {
                 if (frmT.sshTrd.osT == null) {
                     return;
                 }
+                frmT.sshTrd.osT.write(input);
+                frmT.sshTrd.osT.flush();
                 if (input == 0x0a) {
                     System.err.println("改行！");
                 }
-                frmT.sshTrd.osT.write(input);
-                frmT.sshTrd.osT.flush();
-                System.err.println("setKey:" + (int)input);
+                //System.err.println("setKey:" + (int)input);
             } catch (IOException ex) {
                 Logger.getLogger(JavaTerminal.class.getName()).log(Level.SEVERE, null, ex);
             }
