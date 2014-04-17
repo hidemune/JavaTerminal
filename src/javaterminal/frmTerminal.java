@@ -6,9 +6,6 @@
 
 package javaterminal;
 
-import java.awt.Rectangle;
-import java.awt.event.InputEvent;
-import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -21,11 +18,7 @@ import java.io.PrintWriter;
 import java.util.ArrayList;
 import static javaterminal.JavaTerminal.frmT;
 import javax.swing.InputMap;
-import javax.swing.JScrollPane;
-import javax.swing.JTextArea;
 import javax.swing.KeyStroke;
-import javax.swing.text.Document;
-import javax.swing.text.Element;
 
 /**
  *
@@ -45,6 +38,7 @@ private String escMode = "";
 private int Pn = 0;
 private int Pn2 = 0;
 PrintWriter bwC;
+private boolean uwagaki = true;
 
     /**
      * Creates new form frmTerminal
@@ -54,14 +48,19 @@ PrintWriter bwC;
         
         //IME止めておく
         textMain.enableInputMethods(false);
+        //タブの動きを止める
         InputMap imputMap=textMain.getInputMap(textMain.WHEN_IN_FOCUSED_WINDOW);
+        imputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_TAB,0), "none");
         
+/*
         ArrayList<KeyStroke> keyS = new ArrayList<KeyStroke>();
         for (int i = 0; i < 255; i++) {
-            keyS.add(KeyStroke.getKeyStroke((i),0));
-            imputMap.put(keyS.get(i), "none");
+            if ((i < KeyEvent.VK_LEFT) || (KeyEvent.VK_DOWN < i)) {
+                keyS.add(KeyStroke.getKeyStroke((i),0));
+                imputMap.put(keyS.get(i), "none");
+            }
         }
-        
+        */
         /*
         textMain.addKeyListener(new KeyAdapter() {
                 public void keyTyped(KeyEvent e){}
@@ -415,24 +414,51 @@ PrintWriter bwC;
             return;
         }
         
-        //カーソル位置に挿入する必要あり
-        int pos = textMain.getCaretPosition();
-        StringBuilder sb = new StringBuilder(textMain.getText());
-        int len = textMain.getText().length();
-        if (pos >= len) {
-            sb.append(String.valueOf(c));
-            lastPos = sb.length();
-            textMain.setText(sb.toString());
-            textMain.setCaretPosition(lastPos);
-        } else {
-            sb.insert(pos, String.valueOf(c));
-            textMain.setText(sb.toString());
-            try {
-                lastPos = pos + 1;
-                textMain.setCaretPosition(lastPos);
-            }catch (Exception e) {
-                System.err.println("lastPos" + lastPos + ": len" + len);
+        if (uwagaki) {
+            //カーソル位置に挿入する必要あり
+            int pos = textMain.getCaretPosition();
+            StringBuilder sb = new StringBuilder(textMain.getText());
+            int len = textMain.getText().length();
+            if (pos >= len) {
+                sb.append(String.valueOf(c));
+                lastPos = sb.length();
+                textMain.setText(sb.toString());
                 textMain.setCaretPosition(textMain.getText().length());
+            } else {
+                //改行コード以外なら削除しておく
+                if (sb.toString().charAt(pos) != '\n') {
+                    sb.deleteCharAt(pos);
+                }
+                sb.insert(pos, String.valueOf(c));
+                textMain.setText(sb.toString());
+                try {
+                    lastPos = pos + 1;
+                    textMain.setCaretPosition(lastPos);
+                }catch (Exception e) {
+                    System.err.println("lastPos" + lastPos + ": len" + len);
+                    textMain.setCaretPosition(textMain.getText().length());
+                }
+            }
+        } else {
+            //カーソル位置に挿入する必要あり
+            int pos = textMain.getCaretPosition();
+            StringBuilder sb = new StringBuilder(textMain.getText());
+            int len = textMain.getText().length();
+            if (pos >= len) {
+                sb.append(String.valueOf(c));
+                lastPos = sb.length();
+                textMain.setText(sb.toString());
+                textMain.setCaretPosition(lastPos);
+            } else {
+                sb.insert(pos, String.valueOf(c));
+                textMain.setText(sb.toString());
+                try {
+                    lastPos = pos + 1;
+                    textMain.setCaretPosition(lastPos);
+                }catch (Exception e) {
+                    System.err.println("lastPos" + lastPos + ": len" + len);
+                    textMain.setCaretPosition(textMain.getText().length());
+                }
             }
         }
     }
@@ -746,17 +772,22 @@ PrintWriter bwC;
         //チュートリアル専用メッセージ
         if (frmT.sshTrd.tutorial) {
             if (keyCode == evt.VK_ESCAPE) {
-                JavaTerminal.talkNoWait("エスケープ。ログイン中は、カーソルのある行の内容を読み上げるキーです。");
+                JavaTerminal.talkNoWait("エスケープ。シフトキーを押しながらこれを押して、カーソルのある行の内容を読み上げます。");
             }
             if (keyCode == evt.VK_SPACE) {
                 JavaTerminal.talkNoWait("スペース");
             }
         } else {
-            if (keyCode == evt.VK_ESCAPE) {
+            if (((evt.getModifiers() & KeyEvent.SHIFT_DOWN_MASK) != 0) && (evt.getKeyCode() == evt.VK_ESCAPE)) {
                 String line = getLine();
                 JavaTerminal.talkNoWait(line);
                 //return;
+            } else {
+                if (evt.getKeyCode() == evt.VK_ESCAPE) {
+                    JavaTerminal.talkNoWait("エスケープ");
+                }
             }
+            
         }
         
         //選択範囲あれば(矢印キーを押した時のみ)
@@ -791,18 +822,12 @@ PrintWriter bwC;
                 } else {
                     setChar = cd;
                 }
-                //コントロールキーと同時押しの場合
+                //コントロールキーと同時押しの場合 キャラクターコードを調整
                 if (((evt.getModifiers() & KeyEvent.CTRL_MASK) != 0)) {
                     setChar = (char)((int)setChar - 0x40);
                 }
                 InputTrd.setKey(setChar);
                 
-                if (evt.getKeyCode() == evt.VK_ESCAPE) {
-                    String line = getLine();
-                    JavaTerminal.talk(line);
-                    evt.consume();  //キー入力をなかったことにする。
-                    return;
-                }
                 evt.consume();  //キー入力をなかったことにする。
                 return;         //有無をいわさず抜ける
             }
@@ -812,71 +837,6 @@ PrintWriter bwC;
         if (frmT.sshTrd.tutorial) {
             return;
         }
-        
-        //ここから後は、コードの残骸。後で消したい。
-        
-        
-        /*
-        if (evt.getKeyCode() == evt.VK_ENTER) {
-            //編集中は何もしない
-            if (mode.equals("edit")) {
-                return;
-            }
-            String cmd = getLine().trim();
-            //textMain.append("\n");      //ここ必要？
-            
-            
-            //最終ポジションを保存
-            execPos = textMain.getText().length();
-            
-            //特殊なコマンド
-            String[] cmdA = cmd.split(" ");
-            //edit
-            if (cmdA[0].equals("edit")) {
-                //ファイル編集モード
-                mode = "edit";
-                JavaTerminal.talk("編集モードに移行します。保存はコントロールエス、中止はコントロールエックスです。");
-                filename = "tmp.txt";
-                try {
-                    filename = cmdA[1];
-                } catch (Exception e) {
-                    //何もしない
-                }
-                editFile(filename);
-                return;
-            }
-            
-            /*
-            //コマンドの実行処理
-            if (!sshTrd.running) {
-                
-                
-                if (cmdA[0].equals("clear")) {
-                    //画面クリア
-                    textMain.setText("");
-                    evt.consume();  //キー入力をなかったことにする
-                    return;
-                }
-                
-                //System.out.println("Exec:" + cmd);
-                //ttyTrd = new JavaTerminal.ttyThread();
-                //InputTrd = new JavaTerminal.InputThread();
-                //ttyTrd.setCmd(cmd);
-                //ttyTrd.start();          //別スレッドで動作させる場合
-                //InputTrd.start();
-                //ErrorTrd.start();
-                evt.consume();  //キー入力をなかったことにする
-            
-            } else {
-                //残骸
-                System.out.println("SSH向けコマンド入力処理:" + cmd);
-                InputTrd.setInput(cmd);
-                evt.consume();  //キー入力をなかったことにする
-                return;
-            }
-            
-        }
-        */
         
         //ログアウト後は、ここを通る
         if (evt.getKeyCode() == evt.VK_ENTER) {
@@ -926,6 +886,7 @@ PrintWriter bwC;
         textMainMyKeyEvent(evt);
         //押したキーを喋らせる
         talkKeyPressed(evt);
+        
     }//GEN-LAST:event_textMainKeyPressed
     private void editFile(String filename) {
         textMain.setText("");
@@ -1036,7 +997,7 @@ PrintWriter bwC;
         sb.append("使い方の例は、以上です。\n");
         textMain.setText(sb.toString());
         textMain.setCaretPosition(0);
-        java.awt.event.KeyEvent evtT = new java.awt.event.KeyEvent(this, 0, 0, 0, KeyEvent.VK_ESCAPE);
+        java.awt.event.KeyEvent evtT = new java.awt.event.KeyEvent(this, 0, 0, KeyEvent.SHIFT_DOWN_MASK, KeyEvent.VK_ESCAPE);
         textMainKeyPressed(evtT);
     }//GEN-LAST:event_jMenuItem6ActionPerformed
 
@@ -1103,7 +1064,16 @@ PrintWriter bwC;
     }//GEN-LAST:event_textMainCaretUpdate
 
     private void textMainKeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_textMainKeyTyped
-        //textMainMyKeyEvent(evt);
+        //エコーと重複するので１文字消す
+        if ((frmT.sshTrd.running) && (!frmT.sshTrd.tutorial)) {
+            String str = String.valueOf(evt.getKeyChar());
+            if ((!str.trim().equals("")) || (str.equals(" "))) {
+                //１文字消す
+                StringBuilder sb = new StringBuilder(textMain.getText());
+                sb.deleteCharAt(textMain.getCaretPosition() - 1);
+                textMain.setText(sb.toString());
+            }
+        }
     }//GEN-LAST:event_textMainKeyTyped
     private String getLine() {
         int pos = textMain.getCaretPosition();
